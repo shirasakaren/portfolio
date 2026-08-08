@@ -82,7 +82,7 @@ export function Hero() {
             <p className="hero-halo-sm font-display text-[clamp(1rem,1.7vw,1.35rem)] font-bold tracking-wide text-sakura-800">
               {profile.role}
             </p>
-            <p className="hero-halo-sm max-w-[26rem] text-[clamp(0.9rem,1.3vw,1.05rem)] leading-relaxed font-medium text-ink-700">
+            <p className="hero-halo-sm max-w-[26rem] text-[clamp(0.9rem,1.3vw,1.05rem)] leading-relaxed font-semibold text-ink-900">
               {profile.blurb}
             </p>
 

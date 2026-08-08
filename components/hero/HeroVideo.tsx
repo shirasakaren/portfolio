@@ -14,9 +14,26 @@ import { MEDIA_KEYS, provideMedia } from "@/lib/mediaRegistry";
  * browser takes the first source whose `media` matches *and* whose codec it
  * knows.
  *
- * Deliberately un-scrimmed — the artwork is the point. Hero text earns its
- * legibility from glyph-attached halos instead.
+ * No scrim over the artwork itself. The only concession to legibility is a
+ * light wash on the right, under the text column — a *lightening* gradient
+ * rather than a darkening one, so it reads as daylight from the window instead
+ * of a panel laid over the illustration. The girl, the cat and the desk keep
+ * their original colours; the rest of the text's contrast comes from
+ * glyph-attached halos.
  */
+
+/**
+ * Peaks where the text is densest (the right edge) and is gone by 70% across,
+ * well before the subject. Alphas are deliberately low — this should be
+ * invisible as a layer and only felt as contrast.
+ */
+const RIGHT_WASH =
+  "linear-gradient(to left," +
+  " rgba(255,250,252,0.46) 0%," +
+  " rgba(255,250,252,0.33) 18%," +
+  " rgba(255,250,252,0.17) 38%," +
+  " rgba(255,250,252,0.05) 55%," +
+  " rgba(255,250,252,0) 68%)";
 
 const AV1_HIGH = 'video/mp4; codecs="av01.0.12M.10.0.110.01.01.01.0"';
 const AV1_MID = 'video/mp4; codecs="av01.0.08M.10.0.110.01.01.01.0"';
@@ -88,6 +105,14 @@ export function HeroVideo({ play }: { play: boolean }) {
         />
         <source src="/hero-video/hero-720p.h264.mp4" type={H264} />
       </video>
+
+      {/* Lighter on small screens, where the text is centred and the backdrop
+          behind it is already bright. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 opacity-60 md:opacity-100"
+        style={{ backgroundImage: RIGHT_WASH }}
+      />
     </div>
   );
 }
