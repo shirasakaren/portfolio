@@ -1,0 +1,25 @@
+# Cloudflare Pages — https://developers.cloudflare.com/pages/configuration/headers/
+
+/_next/static/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/hero-video/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/audio.ogg
+  Cache-Control: public, max-age=31536000, immutable
+
+/audio.m4a
+  Cache-Control: public, max-age=31536000, immutable
+
+/icons/*
+  Cache-Control: public, max-age=2592000
+
+/*.lottie
+  Cache-Control: public, max-age=604800
+
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=()

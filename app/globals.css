@@ -1,26 +1,331 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ───────────────────────────────────────────────────────────────────
+   ✿ Shirasaka Ren — design system
+   Pink, soft, main-character energy. Everything is a token so the
+   whole site can be re-tuned from this one block.
+   ─────────────────────────────────────────────────────────────────── */
+
+@theme {
+  /* Petals — the core pink ramp */
+  --color-sakura-50: #fff7fa;
+  --color-sakura-100: #ffe9f1;
+  --color-sakura-200: #ffd3e3;
+  --color-sakura-300: #ffb7c5;
+  --color-sakura-400: #ff8fc7;
+  --color-sakura-500: #ff69b4;
+  --color-sakura-600: #ff4fa3;
+  --color-sakura-700: #d6336c;
+  --color-sakura-800: #a32552;
+  --color-sakura-900: #6d1738;
+
+  /* Lilac — the secondary accent from her banner gradient */
+  --color-lilac-200: #ecd9ff;
+  --color-lilac-300: #dcb9ff;
+  --color-lilac-400: #c77dff;
+  --color-lilac-500: #a155b9;
+
+  /* Dandelion — the transition's signature warm */
+  --color-dandelion-100: #fff6dd;
+  --color-dandelion-200: #ffefc0;
+  --color-dandelion-300: #ffd98e;
+  --color-dandelion-400: #f7c25c;
+
+  /* Ink — text that stays warm instead of going grey */
+  --color-ink-900: #4a2c3a;
+  --color-ink-700: #6d4356;
+  --color-ink-500: #8a5a72;
+  --color-ink-300: #b392a0;
+
+  --color-cream: #fffdf9;
+
+  --font-display: var(--font-baloo), "Baloo 2", ui-rounded, system-ui, sans-serif;
+  --font-sans: var(--font-jakarta), "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-jp: var(--font-zen-maru), "Hiragino Maru Gothic ProN", "Yu Gothic", sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, "SFMono-Regular", monospace;
+
+  --radius-blob: 2rem;
+
+  --ease-petal: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-drift: cubic-bezier(0.33, 0.02, 0.2, 1);
+
+  --animate-float: float 7s var(--ease-drift) infinite;
+  --animate-bob: bob 3.4s ease-in-out infinite;
+  --animate-twinkle: twinkle 2.6s ease-in-out infinite;
+  --animate-pulse-soft: pulse-soft 2.8s ease-in-out infinite;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@keyframes float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  33% {
+    transform: translate3d(6px, -14px, 0) rotate(4deg);
+  }
+  66% {
+    transform: translate3d(-5px, -6px, 0) rotate(-3deg);
   }
 }
 
+@keyframes bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+@keyframes pulse-soft {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── base ─────────────────────────────────────────────────────────── */
+
+:root {
+  color-scheme: light;
+  --page: var(--color-sakura-50);
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-tap-highlight-color: transparent;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--page);
+  color: var(--color-ink-900);
+  font-family: var(--font-sans);
+  font-synthesis-weight: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── boot ─────────────────────────────────────────────────────────── */
+
+/* The boot sequence owns the screen until the dandelions clear. `data-booting`
+   is set by an inline script before the first paint — and never set at all if
+   JS is off, which is why the shield defaults to hidden. */
+html[data-booting="true"] body {
+  overflow: hidden;
+  background-color: #ffffff;
+}
+
+#boot-shield {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  background: #ffffff;
+}
+
+html[data-booting="true"] #boot-shield {
+  display: block;
+}
+
+/* Applied to live text while its shader stand-in is drawing: the glyph fill
+   disappears so only the halo layer beneath shows through, and the handoff at
+   the end is a single-frame swap rather than a crossfade. */
+.shader-masked,
+.halo-layer {
+  background-image: none !important;
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+/* `background-clip: text` paints the gradient in the *background* layer, which
+   sits UNDER the element's own text-shadow — so a halo drawn on the same
+   element washes the fill out. The halo therefore lives on its own duplicate
+   span behind the real one, where it belongs. */
+.halo-layer {
+  position: absolute;
+  inset: 0;
+  white-space: pre;
+  pointer-events: none;
+}
+
+::selection {
+  background: var(--color-sakura-300);
+  color: var(--color-sakura-900);
+}
+
+:focus-visible {
+  outline: 2.5px solid var(--color-sakura-600);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* Scrollbar — subtle, pink, only where it's supported */
+@supports selector(::-webkit-scrollbar) {
+  ::-webkit-scrollbar {
+    width: 11px;
+    height: 11px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--color-sakura-100);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-sakura-300);
+    border: 3px solid var(--color-sakura-100);
+    border-radius: 99px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-sakura-400);
+  }
+}
+
+/* ── utilities ────────────────────────────────────────────────────── */
+
+@utility text-gradient {
+  background-image: linear-gradient(
+    100deg,
+    var(--color-sakura-700) 0%,
+    var(--color-sakura-600) 34%,
+    var(--color-sakura-500) 62%,
+    var(--color-lilac-400) 100%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+/* Legibility over the hero video without laying a scrim on top of it:
+   the halo is attached to the glyphs, so the artwork stays untouched. */
+@utility hero-halo {
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.75),
+    0 0 12px rgba(255, 255, 255, 0.95),
+    0 0 30px rgba(255, 252, 254, 0.85),
+    0 0 66px rgba(255, 240, 248, 0.7),
+    0 8px 34px rgba(214, 51, 108, 0.22);
+}
+
+@utility hero-halo-sm {
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.8),
+    0 0 10px rgba(255, 255, 255, 0.95),
+    0 0 24px rgba(255, 250, 253, 0.8);
+}
+
+@utility card-soft {
+  background: color-mix(in srgb, var(--color-cream) 82%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-sakura-300) 55%, transparent);
+  box-shadow:
+    0 1px 2px rgba(214, 51, 108, 0.04),
+    0 10px 30px -12px rgba(214, 51, 108, 0.18);
+  backdrop-filter: blur(10px);
+}
+
+@utility rule-petal {
+  background-image: linear-gradient(
+    90deg,
+    var(--color-sakura-100) 0%,
+    var(--color-sakura-300) 25%,
+    var(--color-sakura-500) 50%,
+    var(--color-lilac-400) 75%,
+    var(--color-sakura-100) 100%
+  );
+}
+
+.animate-rise-in {
+  animation: rise-in 0.8s var(--ease-petal) both;
+}
+
+/* ── volume slider ────────────────────────────────────────────────── */
+
+/* `accent-color` alone leaves a dark unfilled track, which reads badly on a
+   translucent pill floating over the hero video. `--fill` is set inline. */
+.volume-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 1.15rem;
+  background: transparent;
+  cursor: pointer;
+}
+
+.volume-range::-webkit-slider-runnable-track {
+  height: 5px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    var(--color-sakura-500) var(--fill, 50%),
+    var(--color-sakura-200) var(--fill, 50%)
+  );
+}
+
+.volume-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  margin-top: -4.5px;
+  border-radius: 999px;
+  background: #fff;
+  border: 2.5px solid var(--color-sakura-500);
+  box-shadow: 0 1px 5px rgba(214, 51, 108, 0.4);
+}
+
+.volume-range::-moz-range-track {
+  height: 5px;
+  border-radius: 999px;
+  background: var(--color-sakura-200);
+}
+
+.volume-range::-moz-range-progress {
+  height: 5px;
+  border-radius: 999px;
+  background: var(--color-sakura-500);
+}
+
+.volume-range::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: 2.5px solid var(--color-sakura-500);
+  border-radius: 999px;
+  background: #fff;
+}
+
+/* ── motion safety ────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

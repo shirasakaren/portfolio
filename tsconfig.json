@@ -30,5 +30,7 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules"]
+  // `functions/` is Cloudflare Pages Functions — a different runtime with its
+  // own globals. It is compiled by Cloudflare, not by Next.
+  "exclude": ["node_modules", "functions", "out"]
 }

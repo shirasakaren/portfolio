@@ -1,0 +1,139 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useState } from "react";
+
+import { useAudio } from "@/components/audio/AudioProvider";
+import { useBoot } from "@/components/boot/BootProvider";
+import { HelloLottie } from "@/components/hero/HelloLottie";
+import { HeroVideo } from "@/components/hero/HeroVideo";
+import { ShaderText } from "@/components/hero/ShaderText";
+import { profile } from "@/lib/content";
+import { usePrefersReducedMotion } from "@/lib/motion";
+
+/**
+ * The hero sequence, in order:
+ *   video already rolling → "hello" writes itself → wipes away → the name
+ *   materialises out of the same wind that carried the dandelions off →
+ *   the Japanese name → what she does → a way to say hi.
+ */
+export function Hero() {
+  const { stage, isLive, skipped } = useBoot();
+  const reduced = usePrefersReducedMotion();
+  const audio = useAudio();
+
+  // Direct entry (no boot sequence) shouldn't sit on a blank hero.
+  const [nameActive, setNameActive] = useState(skipped);
+  const [tailActive, setTailActive] = useState(false);
+
+  useEffect(() => {
+    if (!skipped) return;
+    const t = setTimeout(() => setTailActive(true), 900);
+    return () => clearTimeout(t);
+  }, [skipped]);
+
+  useEffect(() => {
+    if (isLive) audio.start();
+  }, [isLive, audio]);
+
+  const videoPlaying = stage !== "loading";
+
+  return (
+    <section className="relative flex h-svh min-h-[600px] w-full items-center overflow-hidden">
+      <HeroVideo play={videoPlaying} />
+
+      <div className="mx-auto flex w-full max-w-[1600px] justify-center px-6 sm:px-10 md:justify-end">
+        <div className="flex w-full max-w-[34rem] flex-col items-center text-center md:items-end md:text-right lg:max-w-[40rem]">
+          {!skipped && (
+            <HelloLottie
+              play={isLive}
+              onWipeStart={() => setNameActive(true)}
+              onDone={() => setTailActive(true)}
+              className="mb-1 h-24 w-[13rem] sm:h-28 sm:w-[15.5rem] lg:h-32 lg:w-[18rem]"
+            />
+          )}
+
+          <h1 className="flex flex-col items-center gap-1 md:items-end">
+            <ShaderText
+              text={profile.name}
+              active={nameActive}
+              reduced={reduced}
+              durationMs={1650}
+              className="text-gradient font-display text-[clamp(2.7rem,7.4vw,5.6rem)] leading-[1.02] font-extrabold tracking-[-0.025em]"
+              haloClassName="hero-halo"
+            />
+            <ShaderText
+              text={profile.nameJa}
+              active={nameActive}
+              reduced={reduced}
+              delayMs={620}
+              durationMs={1100}
+              lang="ja"
+              className="text-gradient font-jp text-[clamp(1.15rem,2.6vw,1.9rem)] font-medium tracking-[0.18em]"
+              haloClassName="hero-halo-sm"
+            />
+          </h1>
+
+          <div
+            className="mt-7 flex flex-col items-center gap-5 md:items-end"
+            style={{
+              opacity: tailActive ? 1 : 0,
+              transform: tailActive ? "translateY(0)" : "translateY(16px)",
+              transition:
+                "opacity 900ms var(--ease-petal), transform 900ms var(--ease-petal)",
+            }}
+          >
+            <p className="hero-halo-sm font-display text-[clamp(1rem,1.7vw,1.35rem)] font-bold tracking-wide text-sakura-800">
+              {profile.role}
+            </p>
+            <p className="hero-halo-sm max-w-[26rem] text-[clamp(0.9rem,1.3vw,1.05rem)] leading-relaxed font-medium text-ink-700">
+              {profile.blurb}
+            </p>
+
+            <div className="mt-1 flex flex-wrap items-center justify-center gap-3 md:justify-end">
+              <Link
+                href="/contact"
+                className="group inline-flex items-center gap-2 rounded-full bg-linear-to-r from-sakura-600 to-sakura-500 px-7 py-3.5 font-display text-base font-bold text-white shadow-[0_10px_30px_-8px_rgba(214,51,108,0.65)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_38px_-10px_rgba(214,51,108,0.75)] active:translate-y-0"
+              >
+                say hi
+                <span aria-hidden className="transition-transform duration-300 group-hover:translate-x-1">
+                  ♡
+                </span>
+              </Link>
+              <Link
+                href="/projects"
+                className="inline-flex items-center gap-2 rounded-full border border-sakura-300/70 bg-white/70 px-6 py-3.5 font-display text-base font-bold text-sakura-800 backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/90"
+              >
+                see my work
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ScrollCue show={tailActive} />
+    </section>
+  );
+}
+
+function ScrollCue({ show }: { show: boolean }) {
+  return (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-x-0 bottom-7 flex justify-center"
+      style={{
+        opacity: show ? 1 : 0,
+        transition: "opacity 1s var(--ease-petal) 400ms",
+      }}
+    >
+      <div className="animate-bob flex flex-col items-center gap-1.5">
+        <span className="hero-halo-sm font-display text-xs font-bold tracking-[0.3em] text-sakura-800 uppercase">
+          scroll
+        </span>
+        <span className="text-lg text-sakura-700 drop-shadow-[0_0_10px_rgba(255,255,255,0.95)]">
+          ↓
+        </span>
+      </div>
+    </div>
+  );
+}
