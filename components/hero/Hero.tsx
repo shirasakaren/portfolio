@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import { useAudio } from "@/components/audio/AudioProvider";
 import { useBoot } from "@/components/boot/BootProvider";
 import { HelloLottie } from "@/components/hero/HelloLottie";
 import { HeroVideo } from "@/components/hero/HeroVideo";
@@ -20,7 +19,6 @@ import { usePrefersReducedMotion } from "@/lib/motion";
 export function Hero() {
   const { stage, isLive, skipped } = useBoot();
   const reduced = usePrefersReducedMotion();
-  const audio = useAudio();
 
   // Direct entry (no boot sequence) shouldn't sit on a blank hero.
   const [nameActive, setNameActive] = useState(skipped);
@@ -32,10 +30,6 @@ export function Hero() {
     return () => clearTimeout(t);
   }, [skipped]);
 
-  useEffect(() => {
-    if (isLive) audio.start();
-  }, [isLive, audio]);
-
   const videoPlaying = stage !== "loading";
 
   return (
@@ -43,13 +37,15 @@ export function Hero() {
       <HeroVideo play={videoPlaying} />
 
       <div className="mx-auto flex w-full max-w-[1600px] justify-center px-6 sm:px-10 md:justify-end">
-        <div className="flex w-full max-w-[34rem] flex-col items-center text-center md:items-end md:text-right lg:max-w-[40rem]">
+        <div className="relative flex w-full max-w-[34rem] -translate-y-[4vh] flex-col items-center text-center md:mr-[3vw] md:items-end md:text-right lg:mr-[5vw] lg:max-w-[40rem]">
+          {/* Plays in the middle of the text block, then wipes away before
+              anything below the name fades in — so it never collides. */}
           {!skipped && (
             <HelloLottie
               play={isLive}
               onWipeStart={() => setNameActive(true)}
               onDone={() => setTailActive(true)}
-              className="mb-1 h-24 w-[13rem] sm:h-28 sm:w-[15.5rem] lg:h-32 lg:w-[18rem]"
+              className="pointer-events-none absolute top-1/2 left-1/2 aspect-[927/471] w-[14rem] -translate-x-1/2 -translate-y-1/2 sm:w-[17rem] lg:w-[20rem]"
             />
           )}
 

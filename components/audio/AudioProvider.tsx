@@ -20,16 +20,18 @@ import {
 import { MEDIA_KEYS, provideMedia } from "@/lib/mediaRegistry";
 
 const FADE_MS = 1400;
+/** How long WebKit gets to veto an ungestured unmute by pausing us. */
+const UNMUTE_VETO_MS = 1500;
 
 type AudioValue = {
   volume: number;
   muted: boolean;
   playing: boolean;
-  /** Autoplay was refused; we're waiting on any interaction to start. */
+  /** The browser refused audible playback; we're waiting on any interaction. */
   needsGesture: boolean;
   setVolume: (v: number) => void;
   toggleMuted: () => void;
-  /** Begin playback, fading in. Safe to call more than once. */
+  /** Make the music audible. Safe to call more than once. */
   start: () => void;
 };
 
@@ -45,16 +47,18 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   const elRef = useRef<HTMLAudioElement | null>(null);
   const fadeRef = useRef<number | null>(null);
   const startedRef = useRef(false);
+  const gestureRef = useRef(false);
 
-  const prefs = useSyncExternalStore(
-    subscribePrefs,
-    getPrefs,
-    getServerPrefs,
-  );
+  const prefs = useSyncExternalStore(subscribePrefs, getPrefs, getServerPrefs);
   const { volume, muted } = prefs;
 
   const [playing, setPlaying] = useState(false);
-  const [needsGesture, setNeedsGesture] = useState(false);
+  const [needsGesture, setNeedsGestureState] = useState(false);
+
+  const setNeedsGesture = useCallback((v: boolean) => {
+    gestureRef.current = v;
+    setNeedsGestureState(v);
+  }, []);
 
   /** Ramp to the target instead of snapping — a hard cut is startling. */
   const fadeTo = useCallback((target: number, ms = FADE_MS) => {
@@ -86,35 +90,64 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
     [],
   );
 
+  /**
+   * Autoplay, honestly.
+   *
+   * No browser will start *audible* media without a gesture, but every browser
+   * allows muted playback — so the track has been rolling silently since mount
+   * and this only has to unmute it, which is a far lower bar and clears in
+   * Chrome, Edge and Firefox. WebKit answers an ungestured unmute by pausing
+   * us, which we detect and turn into a one-shot "any interaction" retry.
+   */
   const start = useCallback(() => {
     const el = elRef.current;
     if (!el || startedRef.current) return;
+    startedRef.current = true;
 
-    el.volume = 0;
-    const attempt = el.play();
-    if (!attempt) return;
+    let detach = () => {};
 
-    const succeed = (ms: number) => {
-      const current = getPrefs();
-      startedRef.current = true;
-      setPlaying(true);
-      setNeedsGesture(false);
-      fadeTo(current.muted ? 0 : current.volume, ms);
-    };
+    function goAudible() {
+      const audio = elRef.current;
+      if (!audio) return;
+      const saved = getPrefs();
+      audio.muted = false;
+      audio.volume = 0;
 
-    void attempt.then(() => succeed(FADE_MS)).catch(() => {
-      // Autoplay policy. Wait for any interaction, then try once more.
+      const settle = () => {
+        setPlaying(true);
+        setNeedsGesture(false);
+        fadeTo(saved.muted ? 0 : saved.volume);
+
+        // WebKit pauses rather than refusing outright. Watch briefly.
+        const onPause = () => {
+          window.clearTimeout(guard);
+          armGesture();
+        };
+        audio.addEventListener("pause", onPause, { once: true });
+        const guard = window.setTimeout(() => {
+          audio.removeEventListener("pause", onPause);
+        }, UNMUTE_VETO_MS);
+      };
+
+      const attempt = audio.play();
+      if (attempt) void attempt.then(settle).catch(armGesture);
+      else settle();
+    }
+
+    function armGesture() {
+      const audio = elRef.current;
+      setPlaying(false);
       setNeedsGesture(true);
+      // Keep the silent stream alive so a tap only has to unmute it.
+      if (audio) {
+        audio.muted = true;
+        void audio.play().catch(() => {});
+      }
       const retry = () => {
         detach();
-        void elRef.current
-          ?.play()
-          .then(() => succeed(700))
-          .catch(() => {
-            /* still blocked — the music button is the way in */
-          });
+        goAudible();
       };
-      const detach = () => {
+      detach = () => {
         document.removeEventListener("pointerdown", retry);
         document.removeEventListener("keydown", retry);
         document.removeEventListener("touchstart", retry);
@@ -122,24 +155,34 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       document.addEventListener("pointerdown", retry, { once: true });
       document.addEventListener("keydown", retry, { once: true });
       document.addEventListener("touchstart", retry, { once: true });
-    });
-  }, [fadeTo]);
+    }
+
+    // The silent pre-roll has been running for a few seconds; start the track
+    // over so the music begins with the reveal.
+    try {
+      if (el.currentTime > 0.05) el.currentTime = 0;
+    } catch {
+      /* not seekable yet — it will just continue from here */
+    }
+    goAudible();
+  }, [fadeTo, setNeedsGesture]);
 
   const setVolume = useCallback(
     (v: number) => {
       const next = Math.min(1, Math.max(0, v));
       // Nudging the slider up is an unmute in spirit.
       updatePrefs(next > 0 ? { volume: next, muted: false } : { volume: next });
-      // Touching the slider is a gesture — a good moment to retry autoplay.
-      if (!startedRef.current) start();
     },
-    [start],
+    [],
   );
 
   const toggleMuted = useCallback(() => {
+    // While autoplay is blocked the button's job is to start the music, not to
+    // mute it — the document-level gesture listener is already doing that, so
+    // toggling here would silence the track the same click just unlocked.
+    if (gestureRef.current) return;
     updatePrefs({ muted: !getPrefs().muted });
-    if (!startedRef.current) start();
-  }, [start]);
+  }, []);
 
   const value = useMemo<AudioValue>(
     () => ({
@@ -175,9 +218,19 @@ function SiteAudio({
   const localRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
-    elRef.current = localRef.current;
+    const el = localRef.current;
+    elRef.current = el;
     // Let the boot sequence wait on this element buffering.
-    provideMedia(MEDIA_KEYS.music, localRef.current);
+    provideMedia(MEDIA_KEYS.music, el);
+    if (!el) return;
+
+    // Silent pre-roll: universally permitted, and it means `start()` only has
+    // to unmute rather than ask for audible playback from a standing stop.
+    el.muted = true;
+    el.volume = 0;
+    void el.play().catch(() => {
+      /* even muted autoplay can be refused; start() falls back to a gesture */
+    });
   }, [elRef]);
 
   return (

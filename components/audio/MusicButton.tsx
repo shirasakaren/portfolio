@@ -34,7 +34,7 @@ export function MusicButton() {
 
   return (
     <div
-      className="flex items-center rounded-full border border-sakura-200/80 bg-white/75 p-1 shadow-[0_6px_20px_-10px_rgba(214,51,108,0.5)] backdrop-blur-md transition-colors duration-300 hover:bg-white/90"
+      className="relative flex items-center rounded-full border border-sakura-200/80 bg-white/75 p-1 shadow-[0_6px_20px_-10px_rgba(214,51,108,0.5)] backdrop-blur-md transition-colors duration-300 hover:bg-white/90"
       onMouseEnter={() => {
         if (closeTimer.current) clearTimeout(closeTimer.current);
         setOpen(true);
@@ -45,6 +45,17 @@ export function MusicButton() {
         if (!e.currentTarget.contains(e.relatedTarget as Node)) setOpen(false);
       }}
     >
+      {/* Shown only when the browser refused audible autoplay, so the silence
+          reads as "waiting for you" instead of "broken". */}
+      {needsGesture && !open && (
+        <span
+          aria-hidden
+          className="animate-pulse-soft pointer-events-none absolute top-full right-0 mt-2.5 rounded-full border border-sakura-200/80 bg-white/85 px-3 py-1.5 font-display text-xs font-bold whitespace-nowrap text-sakura-700 shadow-[0_6px_18px_-8px_rgba(214,51,108,0.5)] backdrop-blur-md"
+        >
+          tap anywhere for music ♪
+        </span>
+      )}
+
       <div
         className="overflow-hidden transition-[width,opacity] duration-350 ease-[cubic-bezier(0.22,1,0.36,1)]"
         style={{ width: open ? "6.5rem" : 0, opacity: open ? 1 : 0 }}

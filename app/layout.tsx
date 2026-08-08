@@ -3,6 +3,7 @@ import { Baloo_2, JetBrains_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import localFont from "next/font/local";
 
 import { AudioProvider } from "@/components/audio/AudioProvider";
+import { AudioStarter } from "@/components/audio/AudioStarter";
 import { BootProvider } from "@/components/boot/BootProvider";
 import { Footer } from "@/components/site/Footer";
 import { Header } from "@/components/site/Header";
@@ -117,6 +118,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
 
         <AudioProvider>
           <BootProvider>
+            <AudioStarter />
             <Header />
             <div id="content" className="flex-1">
               {children}
