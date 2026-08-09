@@ -1,16 +1,9 @@
 /**
  * Contact form handler for Cloudflare Pages Functions.
  *
- * Two operations, routed by pathname:
- *
- *   POST /api/contact/upload-url  — Issues a presigned R2 PUT URL so the
- *                                    browser uploads the file directly to R2.
- *                                    The function itself never touches a
- *                                    100 MB request body.
- *   POST /api/contact              — Receives inquiry metadata (plus an
- *                                    optional R2 key for an already-uploaded
- *                                    file) and forwards it as an email via
- *                                    Cloudflare Email Routing.
+ *   POST /api/contact  — Multipart form data. The function uploads any
+ *                         attached file to R2, then forwards the message as
+ *                         an email via Cloudflare Email Routing.
  *
  * ## Bindings expected on the Pages project
  *
@@ -35,27 +28,9 @@ interface Env {
   CONTACT_FROM?: string;
 }
 
-interface UploadUrlReq {
-  name?: unknown;
-  type?: unknown;
-  size?: unknown;
-}
-
-interface ContactReq {
-  name?: unknown;
-  email?: unknown;
-  message?: unknown;
-  attachment?: {
-    key?: unknown;
-    name?: unknown;
-    size?: unknown;
-    type?: unknown;
-  };
-}
-
 const MAX_NAME = 200;
 const MAX_MESSAGE = 6000;
-const MAX_FILE = 100 * 1024 * 1024; // 100 MB
+const MAX_FILE = 25 * 1024 * 1024; // 25 MB
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 // ── routing ─────────────────────────────────────────────────────────────
@@ -65,13 +40,8 @@ export const onRequest = async (context: {
   env: Env;
 }): Promise<Response> => {
   const { request, env } = context;
-  const url = new URL(request.url);
 
   if (request.method === "OPTIONS") return cors();
-
-  if (url.pathname.endsWith("/upload-url")) {
-    return handleUploadUrl(request, env);
-  }
 
   if (request.method !== "POST") {
     return new Response("Method Not Allowed", {
@@ -106,61 +76,23 @@ function errResp(message: string, status = 400): Response {
   return cors(JSON.stringify({ error: message }), status);
 }
 
-// ── upload URL ──────────────────────────────────────────────────────────
-
-async function handleUploadUrl(request: Request, env: Env): Promise<Response> {
-  if (request.method !== "POST") return errResp("method not allowed", 405);
-
-  if (!env.ATTACHMENTS) {
-    return errResp("Attachments aren't configured yet.", 503);
-  }
-
-  let body: UploadUrlReq;
-  try {
-    body = (await request.json()) as UploadUrlReq;
-  } catch {
-    return errResp("Expected a JSON body.");
-  }
-
-  const name = typeof body.name === "string" ? body.name : "";
-  const size = typeof body.size === "number" ? body.size : MAX_FILE + 1;
-
-  if (!name) return errResp("Missing file name.");
-  if (size > MAX_FILE) return errResp("File too large (100 MB max).", 413);
-
-  const safe = name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-120);
-  const key = `incoming/${Date.now()}-${safe}`;
-
-  try {
-    const presigned = await env.ATTACHMENTS.createUploadUrl(key, {
-      expiry: 300,
-      customMetadata: {
-        originalName: name.slice(0, 512),
-        uploadedAt: new Date().toISOString(),
-      },
-    });
-
-    return jsonE({ uploadUrl: presigned, key });
-  } catch (e) {
-    console.error("[contact] presigned URL failed", e);
-    return errResp("Couldn't prepare upload. Try again.", 502);
-  }
-}
-
 // ── contact ─────────────────────────────────────────────────────────────
 
 async function handleContact(request: Request, env: Env): Promise<Response> {
-  let body: ContactReq;
+  // The front end posts multipart/form-data so the browser can send a file
+  // natively. `formData()` buffers the full request body in isolate memory;
+  // the 25 MB cap on the client keeps this far from the 128 MB ceiling.
+  let fd: FormData;
   try {
-    body = (await request.json()) as ContactReq;
+    fd = await request.formData();
   } catch {
-    return errResp("Expected a JSON body.");
+    return errResp("Expected form data.");
   }
 
-  const name = typeof body.name === "string" ? body.name.trim() : "";
-  const email = typeof body.email === "string" ? body.email.trim() : "";
-  const message =
-    typeof body.message === "string" ? body.message.trim() : "";
+  const name = (fd.get("name") as string | null)?.trim() ?? "";
+  const email = (fd.get("email") as string | null)?.trim() ?? "";
+  const message = (fd.get("message") as string | null)?.trim() ?? "";
+  const file = fd.get("attachment") as File | null;
 
   if (!name || name.length > MAX_NAME)
     return errResp("Please include your name.");
@@ -169,18 +101,34 @@ async function handleContact(request: Request, env: Env): Promise<Response> {
   if (!message || message.length > MAX_MESSAGE)
     return errResp(`Message must be 1–${MAX_MESSAGE} characters.`);
 
-  // ── attachment: verify the R2 object exists ──
+  if (file && file.size > MAX_FILE)
+    return errResp(`File too large (${MAX_FILE / 1024 / 1024} MB max).`, 413);
+
+  // ── upload file to R2 ──
 
   let attachmentLine = "";
-  const att = body.attachment;
-  if (att?.key && typeof att.key === "string" && env.ATTACHMENTS) {
-    const obj = await env.ATTACHMENTS.head(att.key);
-    if (obj) {
-      const attName =
-        typeof att.name === "string" ? att.name : att.key.split("-").slice(1).join("-");
-      const attSize =
-        typeof att.size === "number" ? formatBytes(att.size) : "unknown size";
-      attachmentLine = `${attName}  ·  ${attSize}\nhttps://ren.shirasaka.work/api/contact/attachment?key=${encodeURIComponent(att.key)}\n`;
+  if (file && file.size > 0 && env.ATTACHMENTS) {
+    try {
+      const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-120);
+      const key = `incoming/${Date.now()}-${safe}`;
+
+      await env.ATTACHMENTS.put(key, file.stream(), {
+        customMetadata: {
+          originalName: file.name.slice(0, 512),
+          uploadedAt: new Date().toISOString(),
+        },
+        httpMetadata: {
+          contentType: file.type || "application/octet-stream",
+        },
+      });
+
+      attachmentLine =
+        `${file.name}  ·  ${formatBytes(file.size)}\n` +
+        `Stored: ${key}`;
+    } catch (e) {
+      console.error("[contact] R2 upload failed", e);
+      // Don't fail the whole submission — the message still goes through.
+      attachmentLine = `${file.name}  — upload failed, but the message is below`;
     }
   }
 

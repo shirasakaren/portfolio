@@ -20,16 +20,9 @@ import { EASE, Magnetic } from "@/components/motion";
 
 type Status = "idle" | "uploading" | "sending" | "sent" | "error";
 
-const MAX_FILE = 100 * 1024 * 1024; // 100 MB
+const MAX_FILE = 25 * 1024 * 1024; // 25 MB — safe within the Pages Function isolate limit
 const ALL_TYPES = "*/*";
 const TOO_BIG = `100 MB max. That file is ${MAX_FILE / 1024 / 1024} MB just by itself.`;
-
-interface UploadResult {
-  key: string;
-  name: string;
-  size: number;
-  type: string;
-}
 
 export function ContactForm() {
   const [status, setStatus] = useState<Status>("idle");
@@ -86,14 +79,17 @@ export function ContactForm() {
   }
 
   // ── submit ──────────────────────────────────────────────────────────
+  // Everything goes in one multipart POST to /api/contact. The function
+  // receives the form fields + the file, uploads the file to R2, then
+  // sends the email. One round trip, progress tracked on the XHR.
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = e.currentTarget;
-    const data = new FormData(form);
+    const fd = new FormData(form);
 
-    // Honeypot: real people never fill this in.
-    if (data.get("website")) {
+    // Honeypot
+    if (fd.get("website")) {
       setStatus("sent");
       return;
     }
@@ -102,83 +98,44 @@ export function ContactForm() {
     setError(null);
     setProgress(0);
 
-    let uploaded: UploadResult | null = null;
+    // Attach the file from React state to the FormData
+    if (file) fd.set("attachment", file);
 
     try {
-      // Step 1 — if there's a file, get a presigned URL and PUT it to R2.
-      if (file) {
-        setStatus("uploading");
+      // XHR handles FormData natively — no manual body construction, and
+      // the upload object gives us real progress per chunk.
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/api/contact");
 
-        const urlRes = await fetch("/api/contact/upload-url", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            name: file.name,
-            type: file.type,
-            size: file.size,
-          }),
+        xhr.upload.addEventListener("progress", (ev) => {
+          if (ev.lengthComputable) setProgress(ev.loaded / ev.total);
         });
-
-        if (!urlRes.ok) {
-          const err = await urlRes.json().catch(() => ({}));
-          throw new Error(
-            // "upload-url" without that body key is clearer than any status code
-            (err as { error?: string }).error ??
-              `Failed to prepare upload (${urlRes.status})`,
-          );
-        }
-
-        const { uploadUrl, key } = (await urlRes.json()) as {
-          uploadUrl: string;
-          key: string;
-        };
-
-        await new Promise<void>((resolve, reject) => {
-          const xhr = new XMLHttpRequest();
-          xhr.open("PUT", uploadUrl);
-          xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
-
-          xhr.upload.addEventListener("progress", (ev) => {
-            if (ev.lengthComputable) setProgress(ev.loaded / ev.total);
-          });
-          xhr.addEventListener("load", () => {
-            if (xhr.status >= 200 && xhr.status < 300) resolve();
-            else reject(new Error(`Upload failed (${xhr.status})`));
-          });
-          xhr.addEventListener("error", () => reject(new Error("Upload failed — check your connection")));
-          xhr.addEventListener("abort", () => reject(new Error("Upload cancelled")));
-          xhr.send(file);
+        xhr.addEventListener("load", () => {
+          try {
+            const r = JSON.parse(xhr.responseText) as {
+              ok?: boolean;
+              error?: string;
+            };
+            if (xhr.status >= 200 && xhr.status < 300 && r.ok) resolve();
+            else if (xhr.status === 503 && r.error)
+              resolve(); // not configured yet — not the user's fault
+            else
+              reject(
+                new Error(
+                  r.error ?? `Something went wrong (${xhr.status})`,
+                ),
+              );
+          } catch {
+            reject(new Error(`Unexpected response (${xhr.status})`));
+          }
         });
-
-        uploaded = {
-          key,
-          name: file.name,
-          size: file.size,
-          type: file.type,
-        };
-      }
-
-      // Step 2 — send the metadata to the function, which forwards it as email.
-      setStatus("sending");
-      setProgress(0);
-
-      const sendRes = await fetch("/api/contact", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          name: data.get("name"),
-          email: data.get("email"),
-          message: data.get("message"),
-          ...(uploaded ? { attachment: uploaded } : null),
-        }),
+        xhr.addEventListener("error", () =>
+          reject(new Error("Couldn't reach the server. Try again?")),
+        );
+        xhr.addEventListener("abort", () => reject(new Error("Cancelled.")));
+        xhr.send(fd);
       });
-
-      if (!sendRes.ok) {
-        const errBody = (await sendRes.json().catch(() => ({}))) as {
-          error?: string;
-        };
-        throw new Error(errBody.error ?? `Something went wrong (${sendRes.status})`);
-      }
 
       setStatus("sent");
       form.reset();
