@@ -60,7 +60,7 @@ export default function Home() {
                   The best compliment my work ever gets is silence — no
                   incidents, no surprises, no 3AM pages. HR will always 
                   complain when I do nothing cus no accident, and will
-                  also complain when there's an accident.
+                  also complain when there&rsquo;s an accident.
                 </p>            
               </Reveal>
               <Reveal delay={0.28}>
