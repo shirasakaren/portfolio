@@ -99,7 +99,7 @@ export function Hero() {
                 href="/contact"
                 className="group inline-flex items-center gap-2 rounded-full bg-linear-to-r from-sakura-600 to-sakura-500 px-7 py-3.5 font-display text-base font-bold text-white shadow-[0_10px_30px_-8px_rgba(214,51,108,0.65)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_38px_-10px_rgba(214,51,108,0.75)] active:translate-y-0"
               >
-                say hi
+                contact me
                 <span aria-hidden className="transition-transform duration-300 group-hover:translate-x-1">
                   ♡
                 </span>
@@ -108,7 +108,7 @@ export function Hero() {
                 href="/projects"
                 className="inline-flex items-center gap-2 rounded-full border border-sakura-300/70 bg-white/70 px-6 py-3.5 font-display text-base font-bold text-sakura-800 backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/90"
               >
-                see my work
+                my work
               </Link>
             </div>
           </div>

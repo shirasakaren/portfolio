@@ -12,10 +12,10 @@ export const profile = {
   role: "DevOps · Security · Cloud · Servers",
   /** The one-line version, from the CV headline. */
   headline:
-    "Platform · DevSecOps · SRE — physical L1/L2 through to L5/L7, across six clouds",
-  tagline: "laid-back until the pager goes off",
+    "Platform · DevSecOps · Infrastructure · Cloud · SRE · Security",
+  tagline: "guardians of the avilability",
   blurb:
-    "I keep the lights on — clusters, pipelines, and the boring-on-purpose infrastructure underneath. Kawaii on the outside, root on the inside.",
+    "I keep the lights on: clusters, pipelines, and the boring-on-purpose infrastructure underneath. I never let anything down, especially servers",
   lineageJa: "白坂のITを受け継ぐ、まったり系です。",
   lineageEn: "inheriting the Shirasaka IT lineage — the laid-back type",
   location: "Kawasaki, Kanagawa 🗾",
@@ -24,6 +24,8 @@ export const profile = {
   email: "ren@shirasaka.work",
   github: "https://github.com/shirasakaren",
   githubHandle: "@shirasakaren",
+  discord: "https://discord.com/users/1277846847179853857",
+  discordHandle: "@renshirasaka",
   website: "https://ren.shirasaka.work",
   greetingJa: "よろしくおねがいします〜",
   /** Where the career clock starts — used to derive "N years" on the fly. */
@@ -50,14 +52,10 @@ export function yearsOfExperience(now: Date = new Date()): number {
 
 /** The README's about-me bullets, verbatim in spirit. */
 export const aboutPoints = [
-  { emoji: "🌸", text: "My terminal is pink. So is my entire room." },
+  { emoji: "🌸", text: "My terminal is pink. So does my entire room." },
   {
     emoji: "⚡",
     text: 'I fix prod at 3AM in fuzzy socks and call it "incident command."',
-  },
-  {
-    emoji: "🐧",
-    text: "Windows? Don't know her. I dual-boot Arch and more Arch.",
   },
   {
     emoji: "💬",
@@ -110,7 +108,7 @@ export const neofetch = `ren@sanctuary ~ $ neofetch --kawaii
   ╭───────────────────╮   OS      Arch Linux  (btw)
   │   ∧,,,∧           │   Daily   macOS + nix-darwin
   │  ( ̳• ·̫ • ̳)  ~♡    │   Server  RHEL · Debian · Talos
-  │  /    \\>          |   Redteam Kali  (own VLAN, responsible adult)
+  │  /    \\>         |   Redteam Kali  (own VLAN, responsible adult)
   ╰───────────────────╯   Shell   zsh + starship + tmux + nvim
   Uptime  99.99%          Theme   pink, obviously 🌸
   Windows ✗ nemesis       Mood    ✧*｡٩(ˊᗜˋ*)و✧*｡`;

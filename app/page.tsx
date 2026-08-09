@@ -53,14 +53,15 @@ export default function Home() {
                 id="intro"
                 className="text-gradient mt-4 font-display text-[clamp(2rem,5.2vw,3.5rem)] leading-[1.05] font-extrabold tracking-[-0.02em]"
               >
-                <SplitReveal text="Infrastructure that stays boring, on purpose." />
+                <SplitReveal text="Infrastructure that stays boring, on purpose.  >⩊<" />
               </h2>
               <Reveal delay={0.2}>
                 <p className="mt-6 max-w-xl text-lg leading-relaxed text-ink-500">
                   The best compliment my work ever gets is silence — no
-                  incidents, no surprises, no 3AM pages. Getting there is the
-                  interesting part, and it is most of what is on this site.
-                </p>
+                  incidents, no surprises, no 3AM pages. HR will always 
+                  complain when I do nothing cus no accident, and will
+                  also complain when there's an accident.
+                </p>            
               </Reveal>
               <Reveal delay={0.28}>
                 <p className="mt-4 max-w-xl text-ink-500">
@@ -75,7 +76,7 @@ export default function Home() {
               <ReactionClip
                 name="looking"
                 size="w-44 sm:w-56"
-                caption="…well? go on then"
+                caption="I'm great at what I do"
               />
             </Reveal>
           </div>

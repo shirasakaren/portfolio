@@ -58,7 +58,7 @@ export default function AboutPage() {
           kicker="your dearest friend"
           title="yaho~ I'm Ren"
           titleJa="白坂れん・しらさか れん"
-          lead={`${profile.tagline}. I keep other people's infrastructure alive for a living, and I would very much like to tell you about it — but first, the okonomiyaki.`}
+          lead={`${profile.tagline}. I keep other people's infrastructure alive for a living, and I would very much like to tell you about it — but first, get to know me.`}
           aside={
             <ReactionClip
               name="wave"
@@ -71,7 +71,7 @@ export default function AboutPage() {
 
         {/* ── the short version ─────────────────────────────────────── */}
 
-        <section aria-labelledby="short-version" className="mt-16">
+        {/* <section aria-labelledby="short-version" className="mt-16">
           <div className="grid gap-6 lg:grid-cols-[1.25fr_0.75fr]">
             <Reveal>
               <Card className="relative overflow-hidden">
@@ -143,7 +143,7 @@ export default function AboutPage() {
               </Reveal>
             </div>
           </div>
-        </section>
+        </section> */}
 
         {/* ── numbers ───────────────────────────────────────────────── */}
 
@@ -166,34 +166,10 @@ export default function AboutPage() {
             ))}
           </Stagger>
           <p className="mt-3 text-center text-xs text-ink-300">
-            {careerMonths} months of it, if you would rather count that way.
+              {Math.floor(careerMonths / 12)} years and {careerMonths % 12} months 
+              of experience, if you would rather count that way.
           </p>
-        </section>
-
-        {/* ── lineage ───────────────────────────────────────────────── */}
-
-        <Reveal className="mt-16">
-          <section className="rounded-blob relative overflow-hidden border border-sakura-200/70 bg-linear-to-br from-white/80 via-sakura-100/70 to-lilac-200/50 p-8 backdrop-blur-sm sm:p-12">
-            <Sparkles count={10} className="opacity-50" />
-            <div className="relative">
-              <h2 className="font-display text-2xl font-extrabold text-sakura-800 sm:text-3xl">
-                {lineageNote.title}{" "}
-                <span lang="ja" className="font-jp text-xl text-sakura-600">
-                  {lineageNote.titleJa}
-                </span>
-              </h2>
-              <p className="mt-4 max-w-3xl text-lg leading-relaxed text-ink-700">
-                {lineageNote.body}
-              </p>
-              <p lang="ja" className="mt-6 font-jp text-lg text-sakura-700">
-                {profile.lineageJa}
-              </p>
-              <p className="text-sm text-ink-300 italic">
-                {profile.lineageEn}
-              </p>
-            </div>
-          </section>
-        </Reveal>
+        </section>  
 
         {/* ── the work ──────────────────────────────────────────────── */}
 
@@ -379,7 +355,7 @@ export default function AboutPage() {
           </Stagger>
         </section>
 
-        <PetalRule className="mt-20" />
+        <PetalRule className="mt-20" />    
 
         {/* ── off the clock ─────────────────────────────────────────── */}
 
@@ -421,7 +397,7 @@ export default function AboutPage() {
           <TraitDeck />
         </section>
 
-        <section aria-labelledby="opinions" className="mt-16">
+        {/* <section aria-labelledby="opinions" className="mt-16">
           <Reveal>
             <SectionTitle
               id="opinions"
@@ -434,11 +410,11 @@ export default function AboutPage() {
           <div className="-mx-6 sm:-mx-10">
             <OpinionTicker />
           </div>
-        </section>
+        </section> */}
 
         {/* ── languages + machines ──────────────────────────────────── */}
 
-        <section aria-labelledby="languages" className="mt-20">
+        {/* <section aria-labelledby="languages" className="mt-20">
           <Reveal>
             <SectionTitle id="languages" emoji="🗣️">
               Languages I speak
@@ -456,11 +432,11 @@ export default function AboutPage() {
             >
               My machines
             </SectionTitle>
-          </Reveal>
+          </Reveal> */}
           {/* `min-w-0` is load-bearing: a grid item defaults to
               `min-width: auto`, so the terminal's longest ASCII line would
               otherwise widen the whole document on a phone. */}
-          <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+          {/* <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
             <Reveal className="min-w-0">
               <NeofetchTerminal />
             </Reveal>
@@ -470,7 +446,32 @@ export default function AboutPage() {
               </Card>
             </Reveal>
           </div>
-        </section>
+        </section> */}
+
+        {/* ── lineage ───────────────────────────────────────────────── */}
+
+        <Reveal className="mt-16">
+          <section className="rounded-blob relative overflow-hidden border border-sakura-200/70 bg-linear-to-br from-white/80 via-sakura-100/70 to-lilac-200/50 p-8 backdrop-blur-sm sm:p-12">
+            <Sparkles count={10} className="opacity-50" />
+            <div className="relative">
+              <h2 className="font-display text-2xl font-extrabold text-sakura-800 sm:text-3xl">
+                {lineageNote.title}{" "}
+                <span lang="ja" className="font-jp text-xl text-sakura-600">
+                  {lineageNote.titleJa}
+                </span>
+              </h2>
+              <p className="mt-4 max-w-3xl text-lg leading-relaxed text-ink-700">
+                {lineageNote.body}
+              </p>
+              <p lang="ja" className="mt-6 font-jp text-lg text-sakura-700">
+                {profile.lineageJa}
+              </p>
+              <p className="text-sm text-ink-300 italic">
+                {profile.lineageEn}
+              </p>
+            </div>
+          </section>
+        </Reveal>
 
         {/* ── cta ───────────────────────────────────────────────────── */}
 

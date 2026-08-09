@@ -1,59 +1,248 @@
 /**
- * POST /api/contact — the only server-side code on this site.
+ * Contact form handler for Cloudflare Pages Functions.
  *
- * Runs as a Cloudflare Pages Function and hands the message to Cloudflare Email
- * Routing via a `send_email` binding, so there is no third-party mail provider
- * and no API key to leak.
+ * Two operations, routed by pathname:
  *
- * Setup (once):
- *   1. Enable Email Routing on the zone and verify the destination address.
- *   2. Bind it to this Pages project — Settings → Functions → Email bindings —
- *      with the variable name `SEND_EMAIL`.
- *   3. Set the plain vars `CONTACT_TO` (the verified destination) and
- *      `CONTACT_FROM` (any address on the zone, e.g. noreply@shirasaka.work).
+ *   POST /api/contact/upload-url  — Issues a presigned R2 PUT URL so the
+ *                                    browser uploads the file directly to R2.
+ *                                    The function itself never touches a
+ *                                    100 MB request body.
+ *   POST /api/contact              — Receives inquiry metadata (plus an
+ *                                    optional R2 key for an already-uploaded
+ *                                    file) and forwards it as an email via
+ *                                    Cloudflare Email Routing.
  *
- * Until that's configured the endpoint answers 503 with a clear message rather
- * than pretending to have sent anything.
+ * ## Bindings expected on the Pages project
+ *
+ *   R2 bucket   `ATTACHMENTS`    → ren-contact-attachments
+ *   Secret      `CONTACT_TO`     → ren@shirasaka.work
+ *   Secret      `CONTACT_FROM`   → noreply@shirasaka.work
+ *   Email       `SEND_EMAIL`     → the Email Routing send_email binding
  */
 
 import { EmailMessage } from "cloudflare:email";
+
+// ── types ───────────────────────────────────────────────────────────────
 
 interface SendEmailBinding {
   send(message: EmailMessage): Promise<void>;
 }
 
-type Env = {
+interface Env {
+  ATTACHMENTS?: R2Bucket;
   SEND_EMAIL?: SendEmailBinding;
   CONTACT_TO?: string;
   CONTACT_FROM?: string;
-};
+}
 
-type Payload = {
+interface UploadUrlReq {
+  name?: unknown;
+  type?: unknown;
+  size?: unknown;
+}
+
+interface ContactReq {
   name?: unknown;
   email?: unknown;
   message?: unknown;
-};
-
-const MAX_NAME = 200;
-const MAX_MESSAGE = 4000;
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-
-function json(body: unknown, status: number): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: {
-      "content-type": "application/json; charset=utf-8",
-      "cache-control": "no-store",
-    },
-  });
+  attachment?: {
+    key?: unknown;
+    name?: unknown;
+    size?: unknown;
+    type?: unknown;
+  };
 }
 
-/** Anything destined for a header must not be able to inject one. */
+const MAX_NAME = 200;
+const MAX_MESSAGE = 6000;
+const MAX_FILE = 100 * 1024 * 1024; // 100 MB
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+// ── routing ─────────────────────────────────────────────────────────────
+
+export const onRequest = async (context: {
+  request: Request;
+  env: Env;
+}): Promise<Response> => {
+  const { request, env } = context;
+  const url = new URL(request.url);
+
+  if (request.method === "OPTIONS") return cors();
+
+  if (url.pathname.endsWith("/upload-url")) {
+    return handleUploadUrl(request, env);
+  }
+
+  if (request.method !== "POST") {
+    return new Response("Method Not Allowed", {
+      status: 405,
+      headers: { allow: "POST" },
+    });
+  }
+
+  return handleContact(request, env);
+};
+
+// ── CORS ────────────────────────────────────────────────────────────────
+
+function cors(body?: BodyInit | null, status = 200): Response {
+  const headers = new Headers({
+    "access-control-allow-origin": "https://ren.shirasaka.work",
+    "access-control-allow-methods": "POST, OPTIONS",
+    "access-control-allow-headers": "content-type",
+    "access-control-max-age": "86400",
+  });
+  if (body && typeof body === "object" && !(body instanceof ReadableStream)) {
+    headers.set("content-type", "application/json; charset=utf-8");
+  }
+  return new Response(body, { status, headers });
+}
+
+function jsonE(data: unknown, status = 200): Response {
+  return cors(JSON.stringify(data), status);
+}
+
+function errResp(message: string, status = 400): Response {
+  return cors(JSON.stringify({ error: message }), status);
+}
+
+// ── upload URL ──────────────────────────────────────────────────────────
+
+async function handleUploadUrl(request: Request, env: Env): Promise<Response> {
+  if (request.method !== "POST") return errResp("method not allowed", 405);
+
+  if (!env.ATTACHMENTS) {
+    return errResp("Attachments aren't configured yet.", 503);
+  }
+
+  let body: UploadUrlReq;
+  try {
+    body = (await request.json()) as UploadUrlReq;
+  } catch {
+    return errResp("Expected a JSON body.");
+  }
+
+  const name = typeof body.name === "string" ? body.name : "";
+  const size = typeof body.size === "number" ? body.size : MAX_FILE + 1;
+
+  if (!name) return errResp("Missing file name.");
+  if (size > MAX_FILE) return errResp("File too large (100 MB max).", 413);
+
+  const safe = name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-120);
+  const key = `incoming/${Date.now()}-${safe}`;
+
+  try {
+    const presigned = await env.ATTACHMENTS.createUploadUrl(key, {
+      customMetadata: {
+        originalName: name.slice(0, 512),
+        uploadedAt: new Date().toISOString(),
+      },
+      httpMetadata: {
+        contentType:
+          typeof body.type === "string" && body.type
+            ? body.type
+            : "application/octet-stream",
+      },
+      expiry: 300,
+    });
+
+    return jsonE({ uploadUrl: presigned, key });
+  } catch (e) {
+    console.error("[contact] presigned URL failed", e);
+    return errResp("Couldn't prepare upload. Try again.", 502);
+  }
+}
+
+// ── contact ─────────────────────────────────────────────────────────────
+
+async function handleContact(request: Request, env: Env): Promise<Response> {
+  let body: ContactReq;
+  try {
+    body = (await request.json()) as ContactReq;
+  } catch {
+    return errResp("Expected a JSON body.");
+  }
+
+  const name = typeof body.name === "string" ? body.name.trim() : "";
+  const email = typeof body.email === "string" ? body.email.trim() : "";
+  const message =
+    typeof body.message === "string" ? body.message.trim() : "";
+
+  if (!name || name.length > MAX_NAME)
+    return errResp("Please include your name.");
+  if (!EMAIL_RE.test(email) || email.length > MAX_NAME)
+    return errResp("That email address doesn't look right.");
+  if (!message || message.length > MAX_MESSAGE)
+    return errResp(`Message must be 1–${MAX_MESSAGE} characters.`);
+
+  // ── attachment: verify the R2 object exists ──
+
+  let attachmentLine = "";
+  const att = body.attachment;
+  if (att?.key && typeof att.key === "string" && env.ATTACHMENTS) {
+    const obj = await env.ATTACHMENTS.head(att.key);
+    if (obj) {
+      const attName =
+        typeof att.name === "string" ? att.name : att.key.split("-").slice(1).join("-");
+      const attSize =
+        typeof att.size === "number" ? formatBytes(att.size) : "unknown size";
+      attachmentLine = `${attName}  ·  ${attSize}\nhttps://ren.shirasaka.work/api/contact/attachment?key=${encodeURIComponent(att.key)}\n`;
+    }
+  }
+
+  // ── send email ──
+
+  const to = env.CONTACT_TO;
+  const from = env.CONTACT_FROM;
+  if (!env.SEND_EMAIL || !to || !from) {
+    return errResp(
+      "Mail delivery isn't configured yet. Please email ren@shirasaka.work directly.",
+      503,
+    );
+  }
+
+  const country = request.headers.get("cf-ipcountry") ?? "unknown";
+  const emailBody = [
+    `From:    ${name} <${email}>`,
+    `Country: ${country}`,
+    `Sent:    ${new Date().toISOString()}`,
+    "",
+    "─".repeat(48),
+    "",
+    message,
+    "",
+    attachmentLine ? `📎 Attachment\n${attachmentLine}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  try {
+    const raw = buildMime({
+      from,
+      to,
+      replyTo: headerSafe(email),
+      fromName: `${headerSafe(name)} (via shirasaka.work)`,
+      subject: `Portfolio — ${headerSafe(name)}`,
+      body: emailBody,
+    });
+
+    await env.SEND_EMAIL.send(new EmailMessage(from, to, raw));
+    return jsonE({ ok: true });
+  } catch (e) {
+    console.error("[contact] send failed", e);
+    return errResp(
+      "Couldn't deliver that. Please email ren@shirasaka.work directly.",
+      502,
+    );
+  }
+}
+
+// ── MIME construction (RFC 5322 + RFC 2047) ────────────────────────────
+
 function headerSafe(value: string): string {
   return value.replace(/[\r\n]+/g, " ").trim();
 }
 
-/** RFC 2047 encoded-word, so non-ASCII names and subjects survive intact. */
 function encodeHeaderWord(value: string): string {
   if (/^[\x20-\x7E]*$/.test(value)) return value;
   const bytes = new TextEncoder().encode(value);
@@ -69,7 +258,6 @@ function base64Utf8(value: string): string {
   return btoa(binary);
 }
 
-/** Base64 bodies must be wrapped at 76 characters (RFC 2045). */
 function wrap76(value: string): string {
   return (value.match(/.{1,76}/g) ?? []).join("\r\n");
 }
@@ -96,90 +284,8 @@ function buildMime(opts: {
   return `${headers.join("\r\n")}\r\n\r\n${wrap76(base64Utf8(opts.body))}\r\n`;
 }
 
-async function handlePost(request: Request, env: Env): Promise<Response> {
-  let payload: Payload;
-  try {
-    payload = (await request.json()) as Payload;
-  } catch {
-    return json({ error: "Expected a JSON body." }, 400);
-  }
-
-  const name = typeof payload.name === "string" ? payload.name.trim() : "";
-  const email = typeof payload.email === "string" ? payload.email.trim() : "";
-  const message =
-    typeof payload.message === "string" ? payload.message.trim() : "";
-
-  if (!name || name.length > MAX_NAME) {
-    return json({ error: "Please include your name." }, 400);
-  }
-  if (!EMAIL_RE.test(email) || email.length > MAX_NAME) {
-    return json({ error: "That email address doesn't look right." }, 400);
-  }
-  if (!message || message.length > MAX_MESSAGE) {
-    return json(
-      { error: `Message must be 1–${MAX_MESSAGE} characters.` },
-      400,
-    );
-  }
-
-  const to = env.CONTACT_TO;
-  const from = env.CONTACT_FROM;
-  if (!env.SEND_EMAIL || !to || !from) {
-    return json(
-      {
-        error:
-          "Mail delivery isn't configured yet. Please email ren@shirasaka.work directly.",
-      },
-      503,
-    );
-  }
-
-  const country = request.headers.get("cf-ipcountry") ?? "unknown";
-  const body = [
-    `From:    ${name} <${email}>`,
-    `Country: ${country}`,
-    `Sent:    ${new Date().toISOString()}`,
-    "",
-    "─".repeat(48),
-    "",
-    message,
-    "",
-  ].join("\n");
-
-  const raw = buildMime({
-    from,
-    to,
-    replyTo: headerSafe(email),
-    fromName: `${headerSafe(name)} (via shirasaka.work)`,
-    subject: `Portfolio contact — ${headerSafe(name)}`,
-    body,
-  });
-
-  try {
-    await env.SEND_EMAIL.send(new EmailMessage(from, to, raw));
-  } catch (err) {
-    console.error("[contact] send failed", err);
-    return json(
-      {
-        error:
-          "Couldn't deliver that. Please email ren@shirasaka.work directly.",
-      },
-      502,
-    );
-  }
-
-  return json({ ok: true }, 200);
+function formatBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
 }
-
-export const onRequest = async (context: {
-  request: Request;
-  env: Env;
-}): Promise<Response> => {
-  if (context.request.method !== "POST") {
-    return new Response("Method Not Allowed", {
-      status: 405,
-      headers: { allow: "POST" },
-    });
-  }
-  return handlePost(context.request, context.env);
-};

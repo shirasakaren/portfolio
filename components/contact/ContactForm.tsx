@@ -1,20 +1,95 @@
 "use client";
 
-import { useState } from "react";
+import { motion } from "motion/react";
+import { type DragEvent, useRef, useState } from "react";
 
-type Status = "idle" | "sending" | "sent" | "error";
+import { EASE, Magnetic } from "@/components/motion";
 
 /**
- * Posts to /api/contact, which is a Cloudflare Pages Function — the only
- * server-side code on the site. Everything else is static.
+ * The contact form, redesigned to focus the user on one thing: their message.
+ *
+ * Two-step flow:
+ *   1. POST /api/contact/upload-url — a Pages Function issues a presigned R2 PUT URL
+ *   2. Browser uploads the file directly to R2 (so the function never touches a 100MB body)
+ *   3. POST /api/contact — metadata + the R2 key land in Ren's inbox via Email Routing
+ *
+ * The attachment sits in a distinct card BELOW the submit button rather than
+ * between the fields and the action, because a file is supplementary evidence —
+ * the message is what matters.
  */
+
+type Status = "idle" | "uploading" | "sending" | "sent" | "error";
+
+const MAX_FILE = 100 * 1024 * 1024; // 100 MB
+const ALL_TYPES = "*/*";
+const TOO_BIG = `100 MB max. That file is ${MAX_FILE / 1024 / 1024} MB just by itself.`;
+
+interface UploadResult {
+  key: string;
+  name: string;
+  size: number;
+  type: string;
+}
+
 export function ContactForm() {
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
+  const [progress, setProgress] = useState(0);
+  const [file, setFile] = useState<File | null>(null);
+  const [dragging, setDragging] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const dragCount = useRef(0);
 
-  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = event.currentTarget;
+  // ── file drop zone ─────────────────────────────────────────────────
+
+  function onDragEnter(e: DragEvent) {
+    e.preventDefault();
+    dragCount.current++;
+    setDragging(true);
+  }
+  function onDragLeave(e: DragEvent) {
+    e.preventDefault();
+    dragCount.current--;
+    if (dragCount.current <= 0) {
+      dragCount.current = 0;
+      setDragging(false);
+    }
+  }
+  function onDragOver(e: DragEvent) {
+    e.preventDefault();
+  }
+  function onDrop(e: DragEvent) {
+    e.preventDefault();
+    dragCount.current = 0;
+    setDragging(false);
+    const f = e.dataTransfer.files[0];
+    if (f) attach(f);
+  }
+  function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    if (f) attach(f);
+  }
+
+  function attach(f: File) {
+    if (f.size > MAX_FILE) {
+      setError(formatBytes(f.size) + " — " + TOO_BIG);
+      return;
+    }
+    setError(null);
+    setFile(f);
+  }
+
+  function removeFile() {
+    setFile(null);
+    setError(null);
+    setProgress(0);
+  }
+
+  // ── submit ──────────────────────────────────────────────────────────
+
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = e.currentTarget;
     const data = new FormData(form);
 
     // Honeypot: real people never fill this in.
@@ -23,126 +98,370 @@ export function ContactForm() {
       return;
     }
 
-    setStatus("sending");
+    setStatus(file ? "uploading" : "sending");
     setError(null);
+    setProgress(0);
+
+    let uploaded: UploadResult | null = null;
 
     try {
-      const res = await fetch("/api/contact", {
+      // Step 1 — if there's a file, get a presigned URL and PUT it to R2.
+      if (file) {
+        setStatus("uploading");
+
+        const urlRes = await fetch("/api/contact/upload-url", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            name: file.name,
+            type: file.type,
+            size: file.size,
+          }),
+        });
+
+        if (!urlRes.ok) {
+          const err = await urlRes.json().catch(() => ({}));
+          throw new Error(
+            // "upload-url" without that body key is clearer than any status code
+            (err as { error?: string }).error ??
+              `Failed to prepare upload (${urlRes.status})`,
+          );
+        }
+
+        const { uploadUrl, key } = (await urlRes.json()) as {
+          uploadUrl: string;
+          key: string;
+        };
+
+        await new Promise<void>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open("PUT", uploadUrl);
+          xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+
+          xhr.upload.addEventListener("progress", (ev) => {
+            if (ev.lengthComputable) setProgress(ev.loaded / ev.total);
+          });
+          xhr.addEventListener("load", () => {
+            if (xhr.status >= 200 && xhr.status < 300) resolve();
+            else reject(new Error(`Upload failed (${xhr.status})`));
+          });
+          xhr.addEventListener("error", () => reject(new Error("Upload failed — check your connection")));
+          xhr.addEventListener("abort", () => reject(new Error("Upload cancelled")));
+          xhr.send(file);
+        });
+
+        uploaded = {
+          key,
+          name: file.name,
+          size: file.size,
+          type: file.type,
+        };
+      }
+
+      // Step 2 — send the metadata to the function, which forwards it as email.
+      setStatus("sending");
+      setProgress(0);
+
+      const sendRes = await fetch("/api/contact", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           name: data.get("name"),
           email: data.get("email"),
           message: data.get("message"),
+          ...(uploaded ? { attachment: uploaded } : null),
         }),
       });
 
-      if (!res.ok) {
-        const body = (await res.json().catch(() => null)) as {
+      if (!sendRes.ok) {
+        const errBody = (await sendRes.json().catch(() => ({}))) as {
           error?: string;
-        } | null;
-        throw new Error(body?.error ?? `Something went wrong (${res.status})`);
+        };
+        throw new Error(errBody.error ?? `Something went wrong (${sendRes.status})`);
       }
 
       setStatus("sent");
       form.reset();
+      setFile(null);
+      setProgress(0);
     } catch (err) {
       setStatus("error");
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(
+        err instanceof Error ? err.message : "Something went wrong — try again?",
+      );
     }
   }
 
+  // ── sent state — the reaction ──────────────────────────────────────
+
   if (status === "sent") {
     return (
-      <div
+      <motion.div
         role="status"
-        className="rounded-blob border border-sakura-300/70 bg-linear-to-br from-white/90 to-sakura-100/80 p-8 text-center"
+        initial={{ opacity: 0, scale: 0.97 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5, ease: EASE }}
+        className="rounded-blob relative overflow-hidden border border-sakura-300/70 bg-linear-to-br from-white/95 to-sakura-100/85 p-8 text-center sm:p-10"
       >
-        <p className="text-4xl" aria-hidden>
-          ٩(◕‿◕｡)۶
-        </p>
-        <h3 className="mt-4 font-display text-xl font-extrabold text-sakura-800">
-          You actually mailed me?!
-        </h3>
-        <p className="mt-2 text-ink-500">
-          It landed. I&rsquo;ll get back to you — usually within a day or two,
-          JST.
-        </p>
-        <button
-          type="button"
-          onClick={() => setStatus("idle")}
-          className="mt-6 rounded-full border border-sakura-300 px-5 py-2.5 font-display text-sm font-bold text-sakura-700 transition-colors hover:bg-sakura-100"
-        >
-          send another
-        </button>
-      </div>
+        <span
+          aria-hidden
+          className="absolute inset-0 bg-[radial-gradient(60%_50%_at_50%_50%,rgba(255,143,199,0.15),transparent)]"
+        />
+        <div className="relative">
+          <p className="text-5xl" aria-hidden>
+            ٩(◕‿◕｡)۶
+          </p>
+          <h3 className="text-gradient mt-5 font-display text-2xl font-extrabold">
+            You actually mailed me?!
+          </h3>
+          <p className="mt-3 max-w-sm text-ink-500">
+            It landed. I&rsquo;ll get back to you — usually within a day or two,
+            JST.
+          </p>
+          <button
+            type="button"
+            onClick={() => setStatus("idle")}
+            className="mt-7 rounded-full border border-sakura-300 bg-white/75 px-6 py-3 font-display text-sm font-bold text-sakura-700 transition-colors hover:bg-sakura-100"
+          >
+            send another
+          </button>
+        </div>
+      </motion.div>
     );
   }
 
+  // ── the form ────────────────────────────────────────────────────────
+
   return (
-    <form onSubmit={onSubmit} className="space-y-5">
+    <form ref={formRef} onSubmit={onSubmit} className="space-y-6" noValidate>
       <div className="grid gap-5 sm:grid-cols-2">
-        <Field label="Your name" name="name" autoComplete="name" required />
-        <Field
+        <Input
+          label="Your name"
+          name="name"
+          autoComplete="name"
+          placeholder="Shirasaka Ren"
+          required
+        />
+        <Input
           label="Email"
           name="email"
           type="email"
           autoComplete="email"
+          placeholder="you@example.com"
           required
         />
       </div>
 
       <label className="block">
-        <span className="font-display text-sm font-bold text-sakura-800">
-          Message
+        <span className="flex items-center gap-2 font-display text-sm font-bold text-sakura-800">
+          What&rsquo;s on your mind?
+          <span className="font-normal text-ink-300">— the thing you actually want to say</span>
         </span>
         <textarea
           name="message"
-          rows={6}
+          rows={5}
           required
-          maxLength={4000}
-          placeholder="What needs keeping alive?"
-          className="mt-2 w-full resize-y rounded-2xl border border-sakura-200 bg-white/85 px-4 py-3 text-ink-900 placeholder:text-ink-300 focus:border-sakura-400 focus:outline-none"
+          maxLength={6000}
+          placeholder="Something is breaking, someone needs a platform, or you just want to talk about infrastructure — this is the part I read first."
+          className="mt-2 w-full resize-y rounded-[1.3rem] border border-sakura-200 bg-white/85 px-5 py-4 text-[0.95rem] leading-relaxed text-ink-900 placeholder:text-ink-300 focus:border-sakura-400 focus:outline-none"
         />
       </label>
 
-      {/* Honeypot — visually and programmatically hidden from humans. */}
-      <div aria-hidden className="hidden">
+      {/* Honeypot */}
+      <div aria-hidden className="absolute -left-[9999px] opacity-0">
         <label>
-          Website
-          <input name="website" tabIndex={-1} autoComplete="off" />
+          Website <input name="website" tabIndex={-1} autoComplete="off" />
         </label>
       </div>
 
+      {/* ── submit ─────────────────────────────────────────────────── */}
+      <div className="flex flex-wrap items-center gap-4">
+        <Magnetic>
+          <button
+            type="submit"
+            disabled={status === "uploading" || status === "sending"}
+            className="inline-flex items-center gap-2.5 rounded-full bg-linear-to-r from-sakura-600 to-lilac-400 px-8 py-4 font-display text-lg font-bold text-white shadow-[0_14px_38px_-14px_rgba(214,51,108,0.8)] transition-transform duration-300 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-55 disabled:hover:translate-y-0"
+          >
+            {status === "uploading"
+              ? "uploading…"
+              : status === "sending"
+                ? "sending…"
+                : "send it"}
+            <span aria-hidden>♡</span>
+          </button>
+        </Magnetic>
+      </div>
+
+      {/* ── upload progress ────────────────────────────────────────── */}
+      {status === "uploading" && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          className="overflow-hidden"
+        >
+          <div className="rounded-full bg-sakura-100">
+            <motion.div
+              className="h-2 rounded-full bg-linear-to-r from-sakura-600 to-lilac-400"
+              initial={{ width: 0 }}
+              animate={{ width: `${Math.round(progress * 100)}%` }}
+              transition={{ duration: 0.2 }}
+            />
+          </div>
+          <p className="mt-2 text-center font-mono text-xs text-ink-500">
+            {Math.round(progress * 100)}%
+          </p>
+        </motion.div>
+      )}
+
+      {/* ── error ──────────────────────────────────────────────────── */}
       {status === "error" && error && (
-        <p role="alert" className="text-sm font-semibold text-sakura-700">
+        <p
+          role="alert"
+          className="rounded-2xl border border-sakura-300 bg-sakura-100 px-5 py-3.5 text-sm font-semibold text-sakura-700"
+        >
           {error}
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={status === "sending"}
-        className="inline-flex items-center gap-2 rounded-full bg-linear-to-r from-sakura-600 to-sakura-500 px-7 py-3.5 font-display font-bold text-white shadow-[0_10px_30px_-10px_rgba(214,51,108,0.65)] transition-transform duration-300 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
-      >
-        {status === "sending" ? "sending…" : "send it"}
-        <span aria-hidden>♡</span>
-      </button>
+      {/* ── attachment card ──────────────────────────────────────────
+          Sits BELOW the submit button so the form stays compact and the
+          attachment is an afterthought rather than a hurdle. */}
+      <AttachmentCard
+        file={file}
+        dragging={dragging}
+        onDragEnter={onDragEnter}
+        onDragLeave={onDragLeave}
+        onDragOver={onDragOver}
+        onDrop={onDrop}
+        onChange={onFileChange}
+        onRemove={removeFile}
+        disabled={status === "uploading" || status === "sending"}
+      />
     </form>
   );
 }
 
-function Field({
+// ── attachment card ─────────────────────────────────────────────────────
+
+function AttachmentCard({
+  file,
+  dragging,
+  onDragEnter,
+  onDragLeave,
+  onDragOver,
+  onDrop,
+  onChange,
+  onRemove,
+  disabled,
+}: {
+  file: File | null;
+  dragging: boolean;
+  onDragEnter: (e: DragEvent) => void;
+  onDragLeave: (e: DragEvent) => void;
+  onDragOver: (e: DragEvent) => void;
+  onDrop: (e: DragEvent) => void;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onRemove: () => void;
+  disabled: boolean;
+}) {
+  const labelRef = useRef<HTMLLabelElement>(null);
+  const id = "contact-attachment";
+
+  if (file) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.97 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="glass rounded-[1.3rem] flex flex-wrap items-center gap-4 p-4"
+      >
+        <FileIcon type={file.type} />
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-display text-sm font-extrabold text-sakura-800">
+            {file.name}
+          </p>
+          <p className="font-mono text-xs text-ink-500">
+            {formatBytes(file.size)}
+          </p>
+        </div>
+        {!disabled && (
+          <button
+            type="button"
+            onClick={onRemove}
+            className="grid size-9 place-items-center rounded-full border border-sakura-200 bg-white/80 text-sakura-700 transition-colors hover:bg-sakura-100"
+            aria-label="Remove attachment"
+          >
+            ✕
+          </button>
+        )}
+      </motion.div>
+    );
+  }
+
+  return (
+    <label
+      ref={labelRef}
+      htmlFor={id}
+      onDragEnter={onDragEnter}
+      onDragLeave={onDragLeave}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+      className={`block cursor-pointer rounded-[1.3rem] border-2 border-dashed p-5 text-center transition-all duration-300 ${
+        dragging
+          ? "scale-[1.015] border-sakura-500 bg-sakura-100/80 shadow-[0_20px_44px_-20px_rgba(214,51,108,0.7)]"
+          : "border-sakura-200/70 bg-white/40 hover:border-sakura-300 hover:bg-white/70"
+      }`}
+    >
+      <span className="flex flex-col items-center gap-2">
+        <span
+          className={`grid size-11 place-items-center rounded-full transition-colors duration-300 ${
+            dragging ? "bg-sakura-600 text-white" : "bg-sakura-100 text-sakura-400"
+          }`}
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.8}
+            className="size-5"
+          >
+            <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
+          </svg>
+        </span>
+        <span className="font-display text-sm font-bold text-sakura-700">
+          {dragging ? "drop it here" : "attach a file"}
+        </span>
+        <span className="text-xs text-ink-300">
+          any type · up to 100 MB — diagrams, logs, NDA, whatever helps
+        </span>
+      </span>
+      <input
+        id={id}
+        type="file"
+        accept={ALL_TYPES}
+        onChange={onChange}
+        disabled={disabled}
+        className="sr-only"
+        tabIndex={-1}
+      />
+    </label>
+  );
+}
+
+// ── helpers ─────────────────────────────────────────────────────────────
+
+function Input({
   label,
   name,
   type = "text",
   autoComplete,
+  placeholder,
   required,
 }: {
   label: string;
   name: string;
   type?: string;
   autoComplete?: string;
+  placeholder?: string;
   required?: boolean;
 }) {
   return (
@@ -156,8 +475,35 @@ function Field({
         autoComplete={autoComplete}
         required={required}
         maxLength={200}
-        className="mt-2 w-full rounded-2xl border border-sakura-200 bg-white/85 px-4 py-3 text-ink-900 placeholder:text-ink-300 focus:border-sakura-400 focus:outline-none"
+        placeholder={placeholder}
+        className="mt-2 w-full rounded-[1.2rem] border border-sakura-200 bg-white/85 px-4 py-3.5 text-[0.95rem] text-ink-900 placeholder:text-ink-300 focus:border-sakura-400 focus:outline-none"
       />
     </label>
   );
+}
+
+function FileIcon({ type }: { type: string }) {
+  let emoji = "📎";
+  if (type.startsWith("image/")) emoji = "🖼️";
+  else if (type.includes("pdf")) emoji = "📄";
+  else if (type.includes("zip") || type.includes("tar") || type.includes("gzip"))
+    emoji = "📦";
+  else if (type.includes("json") || type.includes("xml") || type.includes("yaml"))
+    emoji = "📋";
+  else if (type.startsWith("video/")) emoji = "🎬";
+
+  return (
+    <span
+      aria-hidden
+      className="grid size-11 shrink-0 place-items-center rounded-xl bg-white/80 text-xl ring-1 ring-sakura-200/60"
+    >
+      {emoji}
+    </span>
+  );
+}
+
+function formatBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
 }
