@@ -40,14 +40,17 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Typecheck
-        run: npx tsc --noEmit
-
       # `next build` writes the static export to ./out. The contact form lives
       # in ./functions and is picked up from the repository root, not from the
       # asset directory — so this must run with the root as the working dir.
       - name: Build
         run: npm run build
+
+      # After the build, not before: Next 16 generates the route types that
+      # `LayoutProps<"/">` and friends resolve against into .next/types, so on a
+      # clean checkout a standalone tsc has nothing to resolve them from.
+      - name: Typecheck
+        run: npx tsc --noEmit
 
       # A branch name is untrusted input: it reaches us from whoever pushed, and
       # it is about to be interpolated into a shell command. Scrub it to the
