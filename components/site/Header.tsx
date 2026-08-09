@@ -12,12 +12,13 @@ import { navLinks } from "@/lib/content";
  * Two navigations, one at a time.
  *
  * On the hero — the top of the homepage, where the video is the whole screen —
- * the links drop down the left edge under the wordmark, each on its own small
- * readable patch. Everywhere else they collapse back into a conventional bar,
- * spread evenly between the wordmark and the music control.
+ * every link, Contact included, drops down the left edge under the wordmark on
+ * its own small readable patch. All one level, no emphasis.
  *
- * Contact is pulled out of the run of links in both layouts and styled as a
- * filled pill: it is the one thing on this site that asks for a reply.
+ * Everywhere else they collapse into a bar: the four section links centred in
+ * the viewport at conventional spacing, with Contact pulled out to the right
+ * beside the music control and styled as a filled pill — the one thing on this
+ * site that asks for a reply.
  */
 
 const CTA_HREF = "/contact";
@@ -57,11 +58,14 @@ export function Header() {
             : "border-b border-sakura-200/45 bg-sakura-50/45 backdrop-blur-2xl"
         }`}
       >
-        <div className="mx-auto flex h-16 max-w-[1600px] items-center px-5 sm:h-[4.5rem] sm:px-8">
+        {/* Equal 1fr gutters keep the middle column on the viewport's centre
+            line regardless of how wide the wordmark or the right cluster get,
+            and the grid makes overlap structurally impossible. */}
+        <div className="mx-auto grid h-16 max-w-[1600px] grid-cols-[1fr_auto_1fr] items-center px-5 sm:h-[4.5rem] sm:px-8">
           <Link
             href="/"
             aria-label="Shirasaka Ren — home"
-            className={`group flex shrink-0 items-baseline gap-2 transition-[filter] duration-500 ${
+            className={`group flex w-fit shrink-0 items-baseline gap-2 justify-self-start transition-[filter] duration-500 ${
               heroMode
                 ? "drop-shadow-[0_0_10px_rgba(255,255,255,0.95)] drop-shadow-[0_0_26px_rgba(255,255,255,0.8)]"
                 : ""
@@ -78,11 +82,11 @@ export function Header() {
             </span>
           </Link>
 
-          {/* Bar layout — evenly spread from the wordmark to the music button. */}
+          {/* Bar layout — the section links, centred, at normal spacing. */}
           <nav
             aria-label="Main"
             inert={heroMode}
-            className={`hidden flex-1 items-center justify-between px-6 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] sm:flex lg:px-12 ${
+            className={`hidden items-center gap-0.5 justify-self-center transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] sm:flex lg:gap-2 ${
               heroMode
                 ? "pointer-events-none -translate-y-1 opacity-0"
                 : "translate-y-0 opacity-100"
@@ -96,10 +100,21 @@ export function Header() {
                 active={isActive(link.href)}
               />
             ))}
-            {CTA_LINK && <CtaLink href={CTA_LINK.href} label={CTA_LINK.label} />}
           </nav>
 
-          <div className="ml-auto flex items-center gap-2 sm:ml-0">
+          <div className="flex items-center gap-2 justify-self-end">
+            {CTA_LINK && (
+              <span
+                inert={heroMode}
+                className={`hidden transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] sm:inline-flex ${
+                  heroMode
+                    ? "pointer-events-none -translate-y-1 opacity-0"
+                    : "translate-y-0 opacity-100"
+                }`}
+              >
+                <CtaLink href={CTA_LINK.href} label={CTA_LINK.label} />
+              </span>
+            )}
             <MusicButton />
             <button
               type="button"
@@ -166,7 +181,7 @@ export function Header() {
             : "pointer-events-none -translate-y-2 opacity-0"
         }`}
       >
-        {PLAIN_LINKS.map((link) => (
+        {navLinks.map((link) => (
           <Link
             key={link.href}
             href={link.href}
@@ -180,11 +195,6 @@ export function Header() {
             {link.label}
           </Link>
         ))}
-        {CTA_LINK && (
-          <div className="mt-2.5 pl-5 sm:pl-8">
-            <CtaLink href={CTA_LINK.href} label={CTA_LINK.label} />
-          </div>
-        )}
       </nav>
     </header>
   );
@@ -203,7 +213,7 @@ function BarLink({
     <Link
       href={href}
       aria-current={active ? "page" : undefined}
-      className={`relative rounded-full py-2 font-display text-sm font-bold transition-colors duration-200 ${
+      className={`relative rounded-full px-3 py-2 font-display text-sm font-bold transition-colors duration-200 lg:px-4 ${
         active ? "text-sakura-700" : "text-ink-700 hover:text-sakura-700"
       }`}
     >
@@ -211,7 +221,7 @@ function BarLink({
       {active && (
         <span
           aria-hidden
-          className="absolute inset-x-0 -bottom-0.5 h-[3px] rounded-full bg-linear-to-r from-sakura-400 to-lilac-400"
+          className="absolute inset-x-3 -bottom-0.5 h-[3px] rounded-full bg-linear-to-r from-sakura-400 to-lilac-400 lg:inset-x-4"
         />
       )}
     </Link>
