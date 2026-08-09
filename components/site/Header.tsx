@@ -39,7 +39,9 @@ export function Header() {
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+    // Re-read on navigation too: arriving at `/` from a scrolled inner page
+    // would otherwise show the bar layout for a frame before the reset lands.
+  }, [pathname]);
 
   const heroMode = pathname === "/" && !scrolled;
 

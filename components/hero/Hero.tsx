@@ -63,7 +63,7 @@ export function Hero() {
               active={nameActive}
               plain={plainName}
               durationMs={1650}
-              className="text-gradient-shine font-display text-[clamp(2.7rem,7.4vw,5.6rem)] leading-[1.02] font-extrabold tracking-[-0.025em]"
+              className="text-gradient font-display text-[clamp(2.7rem,7.4vw,5.6rem)] leading-[1.02] font-extrabold tracking-[-0.025em]"
               haloClassName="hero-halo"
             />
             <ShaderText

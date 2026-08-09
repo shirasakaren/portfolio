@@ -70,24 +70,29 @@ export function ShaderText({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [retired, setRetired] = useState(false);
 
+  /**
+   * Frozen at mount, and rendered directly in JSX rather than applied by an
+   * effect. Masking in an effect meant the text painted once, visible, before
+   * being hidden a frame later — invisible behind the boot shield on a cold
+   * load, but a clear blink when arriving at `/` by client-side navigation.
+   */
+  const [startsHidden] = useState(!plain);
+
   const onDoneRef = useRef(onDone);
+  const plainRef = useRef(plain);
   useEffect(() => {
     onDoneRef.current = onDone;
+    plainRef.current = plain;
   });
 
-  // Hide the fill (and the halo) until something un-hides them — either the
-  // shader finishing or the plain-fade fallback.
+  // Nothing to animate: the text is already on screen from the first paint.
   useEffect(() => {
-    const el = textRef.current;
-    if (el && !el.classList.contains("shader-masked")) {
-      el.classList.add("shader-masked");
-      el.style.opacity = "0";
-    }
-    if (haloRef.current) haloRef.current.style.opacity = "0";
-  }, []);
+    if (startsHidden) return;
+    onDoneRef.current?.();
+  }, [startsHidden]);
 
   useEffect(() => {
-    if (!active) return;
+    if (!active || !startsHidden) return;
 
     const textEl = textRef.current;
     if (!textEl) return;
@@ -96,12 +101,19 @@ export function ShaderText({
     let raf = 0;
     let cleanupGl: (() => void) | undefined;
 
+    /**
+     * Read once, here, rather than when the delayed timer fires. `plain` flips
+     * true the moment the intro is marked done — about half a second into the
+     * reveal — so a staggered element (the Japanese name waits 620ms) would
+     * otherwise see the flipped value and quietly skip its shader.
+     */
+    const usePlainFade = plainRef.current;
+
     const finish = () => {
       if (!alive) return;
       if (canvasRef.current) canvasRef.current.style.opacity = "0";
       if (haloRef.current) haloRef.current.style.opacity = "1";
       textEl.classList.remove("shader-masked");
-      textEl.classList.add("shader-settled");
       textEl.style.opacity = "1";
       onDoneRef.current?.();
       setTimeout(() => {
@@ -114,18 +126,20 @@ export function ShaderText({
 
     const plainFade = () => {
       textEl.classList.remove("shader-masked");
-      textEl.classList.add("shader-settled");
       for (const el of [textEl, haloRef.current]) {
         if (!el) continue;
         el.style.transition = "opacity 700ms cubic-bezier(0.22, 1, 0.36, 1)";
         el.style.opacity = "1";
       }
-      setTimeout(() => onDoneRef.current?.(), 700);
+      setTimeout(() => {
+        onDoneRef.current?.();
+        if (alive) setRetired(true);
+      }, 700);
     };
 
     const startTimer = setTimeout(() => {
       if (!alive) return;
-      if (plain) {
+      if (usePlainFade) {
         plainFade();
         return;
       }
@@ -167,7 +181,9 @@ export function ShaderText({
       ctx.scale(dpr, dpr);
       ctx.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} / ${cs.lineHeight} ${cs.fontFamily}`;
       if ("letterSpacing" in ctx) {
-        (ctx as CanvasRenderingContext2D & { letterSpacing: string }).letterSpacing =
+        (
+          ctx as CanvasRenderingContext2D & { letterSpacing: string }
+        ).letterSpacing =
           cs.letterSpacing === "normal" ? "0px" : cs.letterSpacing;
       }
       ctx.fillStyle = "#ffffff";
@@ -209,7 +225,14 @@ export function ShaderText({
       const tex = gl.createTexture()!;
       gl.bindTexture(gl.TEXTURE_2D, tex);
       gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, raster);
+      gl.texImage2D(
+        gl.TEXTURE_2D,
+        0,
+        gl.RGBA,
+        gl.RGBA,
+        gl.UNSIGNED_BYTE,
+        raster,
+      );
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
       // Transparent padding all round, so clamping reads as "nothing here".
@@ -277,7 +300,9 @@ export function ShaderText({
       cancelAnimationFrame(raf);
       cleanupGl?.();
     };
-  }, [active, delayMs, durationMs, plain, text]);
+    // `plain` is deliberately absent: it flips to true the moment the intro is
+    // marked done, and re-running this would tear down a reveal mid-flight.
+  }, [active, delayMs, durationMs, startsHidden, text]);
 
   return (
     <span className="relative inline-block align-baseline">
@@ -285,13 +310,19 @@ export function ShaderText({
         ref={haloRef}
         aria-hidden="true"
         className={`halo-layer ${className ?? ""} ${haloClassName ?? ""}`}
+        style={startsHidden ? { opacity: 0 } : undefined}
       >
         {text}
       </span>
-      <span ref={textRef} className={`relative ${className ?? ""}`} lang={lang}>
+      <span
+        ref={textRef}
+        className={`relative ${className ?? ""}${startsHidden ? " shader-masked" : ""}`}
+        style={startsHidden ? { opacity: 0 } : undefined}
+        lang={lang}
+      >
         {text}
       </span>
-      {!retired && (
+      {startsHidden && !retired && (
         <canvas
           ref={canvasRef}
           aria-hidden="true"
