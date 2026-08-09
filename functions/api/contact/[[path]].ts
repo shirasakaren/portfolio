@@ -133,17 +133,11 @@ async function handleUploadUrl(request: Request, env: Env): Promise<Response> {
 
   try {
     const presigned = await env.ATTACHMENTS.createUploadUrl(key, {
+      expiry: 300,
       customMetadata: {
         originalName: name.slice(0, 512),
         uploadedAt: new Date().toISOString(),
       },
-      httpMetadata: {
-        contentType:
-          typeof body.type === "string" && body.type
-            ? body.type
-            : "application/octet-stream",
-      },
-      expiry: 300,
     });
 
     return jsonE({ uploadUrl: presigned, key });
