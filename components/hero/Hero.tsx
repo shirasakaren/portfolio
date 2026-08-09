@@ -17,18 +17,17 @@ import { usePrefersReducedMotion } from "@/lib/motion";
  *   the Japanese name → what she does → a way to say hi.
  */
 export function Hero() {
-  const { stage, isLive, skipped, markIntroDone } = useBoot();
+  const { stage, isLive, heroIntroPending, markIntroDone } = useBoot();
   const reduced = usePrefersReducedMotion();
 
-  // Direct entry (no boot sequence) shouldn't sit on a blank hero.
-  const [nameActive, setNameActive] = useState(skipped);
-  const [tailActive, setTailActive] = useState(false);
+  // Coming back to `/` from another page skips straight to the settled state;
+  // the intro is a first-arrival moment, not something to sit through again.
+  // On a return visit the shader has already done its job; a short fade reads
+  // as "you're back" rather than re-staging the whole arrival.
+  const plainName = reduced || !heroIntroPending;
 
-  useEffect(() => {
-    if (!skipped) return;
-    const t = setTimeout(() => setTailActive(true), 900);
-    return () => clearTimeout(t);
-  }, [skipped]);
+  const [nameActive, setNameActive] = useState(!heroIntroPending);
+  const [tailActive, setTailActive] = useState(!heroIntroPending);
 
   // The last thing to animate is the tail block fading up; once that is under
   // way the intro is effectively over and scrolling can be handed back.
@@ -49,7 +48,7 @@ export function Hero() {
         <div className="relative flex w-full max-w-[34rem] -translate-y-[4vh] flex-col items-center text-center md:mr-[3vw] md:items-end md:text-right lg:mr-[5vw] lg:max-w-[40rem]">
           {/* Plays in the middle of the text block, then wipes away before
               anything below the name fades in — so it never collides. */}
-          {!skipped && (
+          {heroIntroPending && (
             <HelloLottie
               play={isLive}
               onWipeStart={() => setNameActive(true)}
@@ -62,7 +61,7 @@ export function Hero() {
             <ShaderText
               text={profile.name}
               active={nameActive}
-              reduced={reduced}
+              plain={plainName}
               durationMs={1650}
               className="text-gradient font-display text-[clamp(2.7rem,7.4vw,5.6rem)] leading-[1.02] font-extrabold tracking-[-0.025em]"
               haloClassName="hero-halo"
@@ -70,7 +69,7 @@ export function Hero() {
             <ShaderText
               text={profile.nameJa}
               active={nameActive}
-              reduced={reduced}
+              plain={plainName}
               delayMs={620}
               durationMs={1100}
               lang="ja"

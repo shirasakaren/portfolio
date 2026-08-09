@@ -37,8 +37,16 @@ const jetbrains = JetBrains_Mono({
  */
 const zenMaru = localFont({
   src: [
-    { path: "./fonts/zen-maru-gothic-subset-500.woff2", weight: "500", style: "normal" },
-    { path: "./fonts/zen-maru-gothic-subset-700.woff2", weight: "700", style: "normal" },
+    {
+      path: "./fonts/zen-maru-gothic-subset-500.woff2",
+      weight: "500",
+      style: "normal",
+    },
+    {
+      path: "./fonts/zen-maru-gothic-subset-700.woff2",
+      weight: "700",
+      style: "normal",
+    },
   ],
   variable: "--font-zen-maru",
   display: "swap",
@@ -77,8 +85,16 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/icons/favicon/favicon-32x32.png", sizes: "32x32", type: "image/png" },
-      { url: "/icons/favicon/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      {
+        url: "/icons/favicon/favicon-32x32.png",
+        sizes: "32x32",
+        type: "image/png",
+      },
+      {
+        url: "/icons/favicon/favicon-16x16.png",
+        sizes: "16x16",
+        type: "image/png",
+      },
     ],
     apple: "/icons/favicon/apple-touch-icon.png",
     shortcut: "/icons/favicon/favicon.ico",

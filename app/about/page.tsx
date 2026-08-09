@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { Card, PageHeader, PageShell, Petals } from "@/components/ui";
+import { PageTransition } from "@/components/site/PageTransition";
 import {
   aboutPoints,
   certs,
@@ -17,7 +18,7 @@ export const metadata: Metadata = {
 
 export default function AboutPage() {
   return (
-    <>
+    <PageTransition>
       <Petals />
       <PageShell>
         <PageHeader
@@ -116,6 +117,6 @@ export default function AboutPage() {
           </div>
         </section>
       </PageShell>
-    </>
+    </PageTransition>
   );
 }

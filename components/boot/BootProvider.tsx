@@ -36,8 +36,12 @@ type BootValue = {
   stage: BootStage;
   /** The hero may start its own sequence. */
   isLive: boolean;
-  /** This page never had a boot sequence (direct entry to an inner page). */
-  skipped: boolean;
+  /**
+   * The hero's own intro (hello → name → tail) still has to play. False once
+   * it has run, so navigating back to `/` lands on a settled hero instead of
+   * replaying four seconds of animation.
+   */
+  heroIntroPending: boolean;
   /** Scroll is held until the intro has fully played out. */
   scrollLocked: boolean;
   /** Called by the hero once its own sequence has landed. */
@@ -47,7 +51,7 @@ type BootValue = {
 const BootContext = createContext<BootValue>({
   stage: "settled",
   isLive: true,
-  skipped: true,
+  heroIntroPending: false,
   scrollLocked: false,
   markIntroDone: () => {},
 });
@@ -74,6 +78,7 @@ export function BootProvider({ children }: { children: React.ReactNode }) {
   const [loaderOut, setLoaderOut] = useState(false);
   const [showTransition, setShowTransition] = useState(false);
   const [scrollLocked, setScrollLocked] = useState(isHome);
+  const [heroIntroPending, setHeroIntroPending] = useState(isHome);
   const shieldCleared = useRef(false);
   const scrollReleased = useRef(false);
 
@@ -93,6 +98,7 @@ export function BootProvider({ children }: { children: React.ReactNode }) {
 
   /** The hero calls this when its last element has settled. */
   const markIntroDone = useCallback(() => {
+    setHeroIntroPending(false);
     if (scrollReleased.current) return;
     setTimeout(releaseScroll, SCROLL_RELEASE_DELAY_MS);
   }, [releaseScroll]);
@@ -173,11 +179,11 @@ export function BootProvider({ children }: { children: React.ReactNode }) {
     () => ({
       stage,
       isLive: stage === "revealed" || stage === "settled",
-      skipped: !isHome,
+      heroIntroPending,
       scrollLocked,
       markIntroDone,
     }),
-    [stage, isHome, scrollLocked, markIntroDone],
+    [stage, heroIntroPending, scrollLocked, markIntroDone],
   );
 
   return (

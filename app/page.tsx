@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Hero } from "@/components/hero/Hero";
 import { Card, Chip, SectionTitle } from "@/components/ui";
 import { lineageNote, profile, stack } from "@/lib/content";
+import { PageTransition } from "@/components/site/PageTransition";
 
 const doing = [
   {
@@ -31,7 +32,7 @@ export default function Home() {
   const clouds = stack.find((g) => g.id === "clouds");
 
   return (
-    <>
+    <PageTransition>
       <Hero />
 
       <div className="relative bg-sakura-50">
@@ -104,7 +105,9 @@ export default function Home() {
               Got something that needs keeping alive?
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-lg text-ink-500">
-              Coffee, matcha, and a very tidy <code className="font-mono text-sakura-700">terraform plan</code> accepted as payment. 🍵
+              Coffee, matcha, and a very tidy{" "}
+              <code className="font-mono text-sakura-700">terraform plan</code>{" "}
+              accepted as payment. 🍵
             </p>
             <Link
               href="/contact"
@@ -115,6 +118,6 @@ export default function Home() {
           </section>
         </div>
       </div>
-    </>
+    </PageTransition>
   );
 }

@@ -4,6 +4,7 @@ import { ContactForm } from "@/components/contact/ContactForm";
 import { Card, PageHeader, PageShell, Petals } from "@/components/ui";
 import { CopyButton } from "@/components/ui/CopyButton";
 import { pgpPublicKey, profile } from "@/lib/content";
+import { PageTransition } from "@/components/site/PageTransition";
 
 export const metadata: Metadata = {
   title: "Contact",
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
 
 export default function ContactPage() {
   return (
-    <>
+    <PageTransition>
       <Petals />
       <PageShell>
         <PageHeader
@@ -97,6 +98,6 @@ export default function ContactPage() {
           </div>
         </div>
       </PageShell>
-    </>
+    </PageTransition>
   );
 }

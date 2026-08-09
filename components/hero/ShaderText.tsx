@@ -47,8 +47,11 @@ type Props = {
   delayMs?: number;
   onDone?: () => void;
   lang?: string;
-  /** Skip the shader entirely (reduced motion) and just fade in. */
-  reduced?: boolean;
+  /**
+   * Skip the shader and just fade in — for reduced motion, and for a return
+   * visit where the name has already made its entrance once.
+   */
+  plain?: boolean;
 };
 
 export function ShaderText({
@@ -60,7 +63,7 @@ export function ShaderText({
   delayMs = 0,
   onDone,
   lang,
-  reduced = false,
+  plain = false,
 }: Props) {
   const haloRef = useRef<HTMLSpanElement>(null);
   const textRef = useRef<HTMLSpanElement>(null);
@@ -120,7 +123,7 @@ export function ShaderText({
 
     const startTimer = setTimeout(() => {
       if (!alive) return;
-      if (reduced) {
+      if (plain) {
         plainFade();
         return;
       }
@@ -268,7 +271,7 @@ export function ShaderText({
       cancelAnimationFrame(raf);
       cleanupGl?.();
     };
-  }, [active, delayMs, durationMs, reduced, text]);
+  }, [active, delayMs, durationMs, plain, text]);
 
   return (
     <span className="relative inline-block align-baseline">

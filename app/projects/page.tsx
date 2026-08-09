@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { Card, PageHeader, PageShell, Petals } from "@/components/ui";
 import { projects } from "@/lib/content";
+import { PageTransition } from "@/components/site/PageTransition";
 
 export const metadata: Metadata = {
   title: "Projects",
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
 
 export default function ProjectsPage() {
   return (
-    <>
+    <PageTransition>
       <Petals />
       <PageShell>
         <PageHeader
@@ -59,7 +60,8 @@ export default function ProjectsPage() {
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-ink-500">
             Most of this lives behind an NDA or inside a private cluster. Happy
-            to walk through architecture, trade-offs and war stories over a call.
+            to walk through architecture, trade-offs and war stories over a
+            call.
           </p>
           <Link
             href="/contact"
@@ -69,6 +71,6 @@ export default function ProjectsPage() {
           </Link>
         </section>
       </PageShell>
-    </>
+    </PageTransition>
   );
 }

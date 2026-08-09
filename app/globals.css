@@ -340,6 +340,63 @@ html[data-booting="true"] #boot-shield {
   background: #fff;
 }
 
+/* ── page transitions ─────────────────────────────────────────────── */
+
+/* The incoming page is revealed by a straight edge sweeping from the lower
+   left to the upper right — the same wind the dandelions ride in on. Both
+   polygon points travel exactly 180%, so the edge stays parallel to itself
+   instead of pivoting. */
+
+::view-transition-old(.page-out) {
+  animation: page-leave 320ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+::view-transition-new(.page-in) {
+  animation: page-arrive 680ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Everything outside the wrapped page — header, footer, page background —
+   is the "root" snapshot. It barely changes, so it just crossfades quickly. */
+::view-transition-old(root) {
+  animation: 190ms ease-out both petal-fade-out;
+}
+::view-transition-new(root) {
+  animation: 190ms ease-in both petal-fade-in;
+}
+
+@keyframes page-leave {
+  to {
+    opacity: 0;
+    filter: blur(4px);
+    transform: scale(0.988);
+  }
+}
+
+@keyframes page-arrive {
+  from {
+    clip-path: polygon(-100% 0%, -70% 0%, -10% 100%, -100% 100%);
+    filter: blur(6px);
+  }
+  55% {
+    filter: blur(0);
+  }
+  to {
+    clip-path: polygon(-100% 0%, 110% 0%, 170% 100%, -100% 100%);
+    filter: blur(0);
+  }
+}
+
+@keyframes petal-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes petal-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
 /* ── motion safety ────────────────────────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
@@ -352,5 +409,10 @@ html[data-booting="true"] #boot-shield {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  ::view-transition-group(*) {
+    animation: none !important;
   }
 }

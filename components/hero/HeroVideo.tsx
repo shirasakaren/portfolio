@@ -48,19 +48,57 @@ export function HeroVideo({ play }: { play: boolean }) {
     provideMedia(MEDIA_KEYS.heroVideo, ref.current);
   }, []);
 
-  // Playback starts a beat before the dandelions, so the page the transition
-  // uncovers is already in motion.
+  /**
+   * Keep it rolling whenever the hero is on screen.
+   *
+   * A single play() on mount is not enough: browsers pause off-screen video to
+   * save power, a backgrounded tab suspends it, and client-side navigation away
+   * from `/` and back builds a fresh element that starts paused. So instead of
+   * firing once, we state the invariant — visible means playing — and re-assert
+   * it on every event that could have broken it.
+   */
   useEffect(() => {
     const v = ref.current;
     if (!v || !play) return;
-    try {
-      if (v.readyState >= 1 && v.currentTime > 0.05) v.currentTime = 0;
-    } catch {
-      /* not seekable yet — it'll just start from wherever it is */
+
+    let alive = true;
+    let onScreen = true;
+
+    const ensurePlaying = () => {
+      if (!alive || !onScreen || document.hidden) return;
+      if (v.paused || v.ended) {
+        void v.play().catch(() => {
+          /* muted inline playback is allowed everywhere we support */
+        });
+      }
+    };
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        onScreen = entry.isIntersecting;
+        if (onScreen) ensurePlaying();
+      },
+      { threshold: 0 },
+    );
+    observer.observe(v);
+
+    // `pause` covers the browser pausing us; the media events cover a source
+    // that finished loading after we first asked.
+    for (const type of ["pause", "canplay", "loadeddata", "stalled"]) {
+      v.addEventListener(type, ensurePlaying);
     }
-    void v.play().catch(() => {
-      /* muted inline video is allowed everywhere we support; nothing to do */
-    });
+    document.addEventListener("visibilitychange", ensurePlaying);
+
+    ensurePlaying();
+
+    return () => {
+      alive = false;
+      observer.disconnect();
+      for (const type of ["pause", "canplay", "loadeddata", "stalled"]) {
+        v.removeEventListener(type, ensurePlaying);
+      }
+      document.removeEventListener("visibilitychange", ensurePlaying);
+    };
   }, [play]);
 
   return (

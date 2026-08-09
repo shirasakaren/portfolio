@@ -1,7 +1,14 @@
 import type { Metadata } from "next";
 
-import { Chip, PageHeader, PageShell, Petals, SectionTitle } from "@/components/ui";
+import {
+  Chip,
+  PageHeader,
+  PageShell,
+  Petals,
+  SectionTitle,
+} from "@/components/ui";
 import { stack } from "@/lib/content";
+import { PageTransition } from "@/components/site/PageTransition";
 
 export const metadata: Metadata = {
   title: "Stack",
@@ -11,7 +18,7 @@ export const metadata: Metadata = {
 
 export default function StackPage() {
   return (
-    <>
+    <PageTransition>
       <Petals />
       <PageShell>
         <PageHeader
@@ -51,6 +58,6 @@ export default function StackPage() {
           ))}
         </div>
       </PageShell>
-    </>
+    </PageTransition>
   );
 }
