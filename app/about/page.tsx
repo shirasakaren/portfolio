@@ -3,10 +3,6 @@ import Link from "next/link";
 
 import {
   FavouritesGrid,
-  LanguageMeters,
-  MachineList,
-  NeofetchTerminal,
-  OpinionTicker,
   TraitDeck,
 } from "@/components/about/Personal";
 import { Timeline } from "@/components/about/Timeline";
@@ -24,7 +20,6 @@ import {
 } from "@/components/ui";
 import { ReactionClip } from "@/components/visual/ReactionClip";
 import {
-  aboutPoints,
   awards,
   careerMonths,
   certRoadmap,
@@ -38,7 +33,6 @@ import {
   projects,
   skillCount,
   stack,
-  topSkills,
   yearsOfExperience,
 } from "@/lib/content";
 
