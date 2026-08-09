@@ -1,62 +1,37 @@
 import type { Metadata } from "next";
 
-import {
-  Chip,
-  PageHeader,
-  PageShell,
-  Petals,
-  SectionTitle,
-} from "@/components/ui";
-import { stack } from "@/lib/content";
 import { PageTransition } from "@/components/site/PageTransition";
+import { StackExplorer } from "@/components/stack/StackExplorer";
+import { PageShell, PageHeader } from "@/components/ui";
+import { ReactionClip } from "@/components/visual/ReactionClip";
+import { skillCount, stack } from "@/lib/content";
 
 export const metadata: Metadata = {
   title: "Stack",
-  description:
-    "The whole toolbox — clouds, languages, orchestration, IaC, observability, security, networking, load testing and data.",
+  description: `${skillCount} tools across ${stack.length} categories — clouds, Kubernetes, IaC, observability, security, networking, data, load testing, languages, and the physical data-centre layer underneath all of it.`,
 };
 
 export default function StackPage() {
   return (
     <PageTransition>
-      <Petals />
-      <PageShell>
+      <PageShell wide>
         <PageHeader
           kicker="the toolbox"
           title="Everything I reach for"
-          lead="Grouped roughly by what breaks at 3AM. Nothing here is on the list because it looked good — it's on the list because I've had to debug it."
+          lead="Grouped by what breaks at 3AM. Search it, or pick the job you are hiring for and let the page do the matching — it knows the aliases, so “EKS” finds AWS and “incident response” finds the SRE half."
+          // The total lives on the logo wall right below; a second counter up
+          // here just says the same number twice.
+          aside={
+            <ReactionClip
+              name="sparkleEyes"
+              eager
+              size="w-32 sm:w-40"
+              caption="ask me about any of them"
+            />
+          }
         />
 
-        <nav aria-label="Stack sections" className="mt-10">
-          <ul className="flex flex-wrap gap-2">
-            {stack.map((group) => (
-              <li key={group.id}>
-                <a
-                  href={`#${group.id}`}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-sakura-200/80 bg-white/70 px-3.5 py-2 text-sm font-semibold text-ink-700 transition-colors hover:border-sakura-400 hover:bg-sakura-100 hover:text-sakura-800"
-                >
-                  <span aria-hidden>{group.emoji}</span>
-                  {group.title}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </nav>
-
-        <div className="mt-16 space-y-14">
-          {stack.map((group) => (
-            <section key={group.id} id={group.id} className="scroll-mt-28">
-              <SectionTitle emoji={group.emoji} note={group.note}>
-                {group.title}
-              </SectionTitle>
-              <ul className="flex flex-wrap gap-2">
-                {group.items.map((item) => (
-                  <Chip key={item}>{item}</Chip>
-                ))}
-              </ul>
-            </section>
-          ))}
-        </div>
+        <StackExplorer />
       </PageShell>
     </PageTransition>
   );

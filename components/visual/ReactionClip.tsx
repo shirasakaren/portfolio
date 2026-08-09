@@ -43,7 +43,8 @@ export function ReactionClip({
   rounded = "rounded-[1.6rem]",
   eager = false,
 }: Props) {
-  const meta = reactions[name];
+  const meta: { file: string; alt: string; transparent?: boolean } =
+    reactions[name];
   const wrapRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const reduced = usePrefersReducedMotion();
@@ -70,7 +71,7 @@ export function ReactionClip({
 
   // Play only while on screen. Off-screen decoding is the expensive part.
   useEffect(() => {
-    if (!near || reduced || videoFailed) return;
+    if (!near || reduced || videoFailed || meta.transparent) return;
     const el = wrapRef.current;
     const v = videoRef.current;
     if (!el || !v) return;
@@ -89,10 +90,11 @@ export function ReactionClip({
     );
     io.observe(el);
     return () => io.disconnect();
-  }, [near, reduced, videoFailed]);
+  }, [near, reduced, videoFailed, meta.transparent]);
 
   const src = `/ren/${meta.file}`;
   const still = `${src}-poster.webp`;
+  const asImage = reduced || videoFailed || meta.transparent;
 
   return (
     <figure className={`${size} ${className}`}>
@@ -101,7 +103,7 @@ export function ReactionClip({
         className={`relative overflow-hidden ${rounded} border border-sakura-200/70 bg-sakura-100/60 shadow-[0_16px_40px_-22px_rgba(214,51,108,0.65)]`}
         style={{ aspectRatio: ratio }}
       >
-        {reduced || videoFailed ? (
+        {asImage ? (
           // eslint-disable-next-line @next/next/no-img-element -- static export, no loader
           <img
             src={reduced ? still : `${src}.webp`}
@@ -122,12 +124,10 @@ export function ReactionClip({
             onError={() => setVideoFailed(true)}
             className="h-full w-full object-cover"
           >
-            {near && (
-              <>
-                <source src={`${src}.webm`} type="video/webm" />
-                <source src={`${src}.mp4`} type="video/mp4" />
-              </>
-            )}
+            {/* H.264 only. The VP9 encodes of these clips came out
+                consistently larger than the MP4s, and a <source> the browser
+                prefers is a <source> that costs the visitor more. */}
+            {near && <source src={`${src}.mp4`} type="video/mp4" />}
           </video>
         )}
 

@@ -36,11 +36,16 @@ export const lineageNote = {
   body: "A family that keeps IT knowledge and passes it down. For generations we've quietly sent brilliant minds into the industry to push it forward. I'm the branch that keeps the lights on: DevOps, Security, Cloud, Servers.",
 } as const;
 
-/** Whole years since `careerStart`, so the number never goes stale. */
+/**
+ * Years since `careerStart`, so the number never goes stale.
+ *
+ * Rounded rather than floored: eleven months into a year, "3" is further from
+ * the truth than "4", and the timeline right below it shows every date anyway.
+ */
 export function yearsOfExperience(now: Date = new Date()): number {
   const start = new Date(profile.careerStart);
   const years = (now.getTime() - start.getTime()) / (365.2425 * 864e5);
-  return Math.max(1, Math.floor(years));
+  return Math.max(1, Math.round(years));
 }
 
 /** The README's about-me bullets, verbatim in spirit. */

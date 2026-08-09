@@ -117,10 +117,14 @@ export function CrestPlate({
         </span>
       </span>
 
-      <span className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-3 bg-linear-to-t from-cream/90 to-transparent px-4 pt-8 pb-3">
-        <span className="font-mono text-xs tracking-[0.2em] text-sakura-600 uppercase">
-          no public screenshots
-        </span>
+      {/* On a card the status chip already occupies this corner, so the
+          caption keeps to the right and the label waits for the full size. */}
+      <span className="absolute inset-x-0 bottom-0 flex items-center justify-end gap-3 bg-linear-to-t from-cream/90 to-transparent px-4 pt-8 pb-3">
+        {!compact && (
+          <span className="mr-auto font-mono text-xs tracking-[0.2em] text-sakura-600 uppercase">
+            no public screenshots
+          </span>
+        )}
         <span className="font-mono text-xs text-ink-300">{project.org}</span>
       </span>
     </div>
@@ -192,12 +196,16 @@ export function SealedPlate({
         </span>
       </span>
 
-      <span className="absolute inset-x-0 top-0 flex items-center gap-2 px-4 pt-3">
-        <span className="animate-pulse-soft size-1.5 rounded-full bg-dandelion-300" />
-        <span className="font-mono text-xs tracking-[0.24em] text-sakura-200 uppercase">
-          not for public distribution
+      {/* Card-sized, this strip lands underneath the tier ribbon the card
+          overlays in the same corner, so it only appears at full size. */}
+      {!compact && (
+        <span className="absolute inset-x-0 top-0 flex items-center gap-2 px-4 pt-3">
+          <span className="animate-pulse-soft size-1.5 rounded-full bg-dandelion-300" />
+          <span className="font-mono text-xs tracking-[0.24em] text-sakura-200 uppercase">
+            not for public distribution
+          </span>
         </span>
-      </span>
+      )}
 
       {reason && !compact && (
         <span className="absolute inset-x-0 bottom-0 bg-linear-to-t from-ink-900/85 to-transparent px-5 pt-10 pb-4">

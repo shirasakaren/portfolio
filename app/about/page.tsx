@@ -457,11 +457,14 @@ export default function AboutPage() {
               My machines
             </SectionTitle>
           </Reveal>
+          {/* `min-w-0` is load-bearing: a grid item defaults to
+              `min-width: auto`, so the terminal's longest ASCII line would
+              otherwise widen the whole document on a phone. */}
           <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-            <Reveal>
+            <Reveal className="min-w-0">
               <NeofetchTerminal />
             </Reveal>
-            <Reveal delay={0.08}>
+            <Reveal delay={0.08} className="min-w-0">
               <Card className="h-full">
                 <MachineList />
               </Card>
@@ -476,7 +479,7 @@ export default function AboutPage() {
             <Sparkles count={12} className="opacity-60" />
             <div className="relative flex flex-col items-center">
               <ReactionClip
-                name="delighted"
+                name="heartSkip"
                 size="w-32 sm:w-36"
                 rounded="rounded-[1.4rem]"
               />

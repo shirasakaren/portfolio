@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { Marquee, Reveal, Stagger, StaggerItem, TiltCard } from "@/components/motion";
 import { ReactionClip } from "@/components/visual/ReactionClip";
+import { usePrefersReducedMotion } from "@/lib/motion";
 import {
   favourites,
   languages,
@@ -197,6 +198,7 @@ export function OpinionTicker() {
 }
 
 export function LanguageMeters() {
+  const reduced = usePrefersReducedMotion();
   return (
     <Stagger as="ul" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {languages.map((lang) => (
@@ -218,13 +220,20 @@ export function LanguageMeters() {
               role="img"
               aria-label={`${lang.name}: ${lang.level}`}
             >
-              <motion.div
-                className="h-full rounded-full bg-linear-to-r from-sakura-500 to-lilac-400"
-                initial={{ width: 0 }}
-                whileInView={{ width: `${lang.fluency * 100}%` }}
-                viewport={{ once: true, amount: 0.8 }}
-                transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
-              />
+              {reduced ? (
+                <span
+                  className="block h-full rounded-full bg-linear-to-r from-sakura-500 to-lilac-400"
+                  style={{ width: `${lang.fluency * 100}%` }}
+                />
+              ) : (
+                <motion.div
+                  className="h-full rounded-full bg-linear-to-r from-sakura-500 to-lilac-400"
+                  initial={{ width: 0 }}
+                  whileInView={{ width: `${lang.fluency * 100}%` }}
+                  viewport={{ once: true, amount: 0.8 }}
+                  transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
+                />
+              )}
             </div>
             <p className="mt-2 text-xs font-semibold text-ink-300">
               {lang.level}
@@ -245,6 +254,7 @@ export function LanguageMeters() {
  */
 export function NeofetchTerminal() {
   const lines = neofetch.split("\n");
+  const reduced = usePrefersReducedMotion();
 
   return (
     <div className="rounded-blob overflow-hidden border border-sakura-200/80 bg-[#2b1b24] shadow-[0_26px_60px_-30px_rgba(74,44,58,0.9)]">
@@ -257,31 +267,48 @@ export function NeofetchTerminal() {
         </p>
       </div>
 
-      <motion.pre
-        className="overflow-x-auto px-5 py-5 font-mono text-[0.72rem] leading-[1.55] text-sakura-100 sm:px-7 sm:text-[0.82rem]"
-        initial="hidden"
-        whileInView="shown"
-        viewport={{ once: true, amount: 0.3 }}
-        variants={{ shown: { transition: { staggerChildren: 0.07 } } }}
-      >
-        {lines.map((line, i) => (
+      {/* Reduced motion gets the finished terminal, not a faster reveal — the
+          variant states would otherwise leave every line at opacity 0 until
+          the section scrolls into view. */}
+      {reduced ? (
+        <pre className="overflow-x-auto px-5 py-5 font-mono text-[0.72rem] leading-[1.55] text-sakura-100 sm:px-7 sm:text-[0.82rem]">
+          {lines.map((line, i) => (
+            <span key={i} className="block whitespace-pre">
+              {line || " "}
+            </span>
+          ))}
+        </pre>
+      ) : (
+        <motion.pre
+          className="overflow-x-auto px-5 py-5 font-mono text-[0.72rem] leading-[1.55] text-sakura-100 sm:px-7 sm:text-[0.82rem]"
+          initial="hidden"
+          whileInView="shown"
+          viewport={{ once: true, amount: 0.3 }}
+          variants={{ shown: { transition: { staggerChildren: 0.07 } } }}
+        >
+          {lines.map((line, i) => (
+            <motion.span
+              key={i}
+              className="block whitespace-pre"
+              variants={{
+                hidden: { opacity: 0, x: -8 },
+                shown: { opacity: 1, x: 0, transition: { duration: 0.32 } },
+              }}
+            >
+              {line || " "}
+            </motion.span>
+          ))}
           <motion.span
-            key={i}
-            className="block whitespace-pre"
-            variants={{
-              hidden: { opacity: 0, x: -8 },
-              shown: { opacity: 1, x: 0, transition: { duration: 0.32 } },
+            className="mt-1 inline-block h-4 w-2 bg-sakura-400 align-middle"
+            animate={{ opacity: [1, 1, 0, 0] }}
+            transition={{
+              duration: 1.05,
+              repeat: Infinity,
+              times: [0, 0.5, 0.5, 1],
             }}
-          >
-            {line || " "}
-          </motion.span>
-        ))}
-        <motion.span
-          className="mt-1 inline-block h-4 w-2 bg-sakura-400 align-middle"
-          animate={{ opacity: [1, 1, 0, 0] }}
-          transition={{ duration: 1.05, repeat: Infinity, times: [0, 0.5, 0.5, 1] }}
-        />
-      </motion.pre>
+          />
+        </motion.pre>
+      )}
     </div>
   );
 }

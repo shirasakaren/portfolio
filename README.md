@@ -100,6 +100,56 @@ direct email address, rather than pretending to have sent anything.
 
 ## Content
 
-All copy lives in `lib/content.ts`, mirroring the profile README. The entries in
-`projects` are capability areas rather than named client work — replace them
-with real case studies when there's something public to point at.
+Every word on the site lives under `lib/content/` and is re-exported from
+`@/lib/content`. Nothing is typed into a page.
+
+| File              | Holds                                                          |
+| ----------------- | -------------------------------------------------------------- |
+| `profile.ts`      | Identity, lineage, nav, PGP key, `yearsOfExperience()`          |
+| `experience.ts`   | The career timeline, straight off the CV, plus `education`      |
+| `credentials.ts`  | Certifications held, the cert roadmap, awards, languages        |
+| `personality.ts`  | Favourites, traits, opinions, machines, the reaction registry   |
+| `projects.ts`     | Eight builds — products with screenshots, infra with diagrams   |
+| `stack.ts`        | 219 skills in 12 groups, with aliases and the role presets      |
+
+Counters, filters and stat strips all derive from these, so adding a project or
+a skill updates every number that mentions it.
+
+### Stack icons
+
+`lib/stack-icons.ts` is **generated**. It bakes in only the brand marks actually
+referenced by `stack.ts` — 142 of them — flattened to bare geometry so the page
+can tint them. After adding an `icon:` slug:
+
+```bash
+npm i --no-save @iconify-json/logos @iconify-json/devicon
+node scripts/gen-stack-icons.mjs
+```
+
+Simple Icons has dropped several vendor marks (AWS, Azure, Oracle, IBM, OpenAI…)
+over trademark policy, which is why the script falls back to Iconify for those.
+A slug with no mark anywhere renders a monogram tile — not an error.
+
+### Reaction clips
+
+`public/ren/` holds fifteen clips of Ren, each as `<name>.mp4`, `<name>.webp`
+(animated) and `<name>-poster.webp`. `components/visual/ReactionClip.tsx` plays
+the MP4, lazily and only while on screen. Two flags matter:
+
+- **No WebM.** The VP9 encodes came out consistently larger than the H.264 ones,
+  and a `<source>` the browser prefers is a `<source>` that costs the visitor
+  more.
+- **`transparent: true`** in the registry serves the animated WebP instead of the
+  video, because yuv420p has no alpha and the encoder flattens it onto black.
+  `wave` is the only clip that needs it.
+
+### Diagrams under seal
+
+`lib/content/projects.ts` supports `diagram.sealed`, which renders an abstract
+sealed plate instead of the image. The Kaizin diagram uses it because the source
+Excalidraw carries a not-for-public-distribution notice; the files themselves
+live in `private-assets/`, outside `public/`, so the build cannot ship them. See
+`private-assets/README.md`.
+
+`SHOW_LEGAL_NAME_LINKS` in the same file gates repository links published under
+Ren's legal name. It is off.

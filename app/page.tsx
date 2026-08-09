@@ -29,8 +29,15 @@ export default function Home() {
       <Hero />
 
       {/* The whole page below the hero sits on the shader field, so it only
-          needs to establish its own edge — not its own background. */}
+          needs to establish its own edge — not its own background. The wash at
+          the top softens the seam where the video stops: the hero snap parks
+          exactly on that line, and a hard edge there reads as a rendering
+          glitch rather than the end of a slide. */}
       <div className="relative">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-linear-to-b from-cream/85 to-transparent"
+        />
         {/* ── the turn ─────────────────────────────────────────────── */}
 
         <section

@@ -467,7 +467,6 @@ export const projects: Project[] = [
     clips: [
       {
         mp4: "/projects/tenki/weatherresult.mp4",
-        webm: "/projects/tenki/weatherresult.webm",
         poster: "/projects/tenki/weatherresult-poster.webp",
         alt: "Tenki Weather answering a forecast question",
         caption: "Asking for a forecast",
@@ -475,7 +474,6 @@ export const projects: Project[] = [
       },
       {
         mp4: "/projects/tenki/uploadfile.mp4",
-        webm: "/projects/tenki/uploadfile.webm",
         poster: "/projects/tenki/uploadfile-poster.webp",
         alt: "Tenki Weather batch upload in progress",
         caption: "Batch processing a spreadsheet",

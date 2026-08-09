@@ -178,10 +178,13 @@
    at all, everything at rest, visible. */
 
 @media (prefers-reduced-motion: reduce) {
+  /* `!important` on the opacity too: the hidden-until-observed rule above
+     carries a :not() attribute selector and therefore outranks this one, so
+     without it the wall stays blank for anyone who asked for less motion. */
   .stack-section .stack-grid > * {
     animation: none !important;
     animation-delay: 0ms !important;
-    opacity: 1;
+    opacity: 1 !important;
   }
   .stack-tile,
   .stack-tile[data-hit="true"] .stack-mark-frame {

@@ -12,7 +12,12 @@
  * `<file>-poster.webp` (still).
  */
 export const reactions = {
-  wave: { file: "wave", alt: "Ren waving hello" },
+  /**
+   * `transparent` clips are served as the animated WebP rather than the video.
+   * H.264 and VP9 in yuv420p have no alpha channel, so the encoder flattens
+   * these onto black — which on a cream page is a black rectangle.
+   */
+  wave: { file: "wave", alt: "Ren waving hello", transparent: true },
   happyBounce: { file: "happy-bounce", alt: "Ren bouncing side to side" },
   cheekPuff: { file: "cheek-puff", alt: "Ren puffing her cheeks" },
   cheekPuffMove: {

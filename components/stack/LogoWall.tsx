@@ -55,9 +55,12 @@ export function LogoWall() {
       </div>
 
       {/* The readout sits on top of the ribbons, which is what makes the whole
-          block read as one object instead of a banner with a caption. */}
-      <div className="pointer-events-none absolute inset-0 grid place-items-center px-4">
-        <div className="glass pointer-events-auto rounded-blob px-6 py-5 text-center shadow-[0_24px_60px_-30px_rgba(214,51,108,0.7)] sm:px-10 sm:py-6">
+          block read as one object instead of a banner with a caption — but on a
+          phone it would cover them completely, so there it simply follows. */}
+      <div className="mt-6 grid place-items-center px-4 sm:pointer-events-none sm:absolute sm:inset-0 sm:mt-0">
+        {/* Deliberately near-opaque. At `glass` transparency the ribbon shows
+            straight through the numbers and the whole block turns to mush. */}
+        <div className="rounded-blob pointer-events-auto border border-sakura-200/80 bg-cream/95 px-6 py-5 text-center shadow-[0_24px_60px_-26px_rgba(214,51,108,0.75)] backdrop-blur-xl sm:px-12 sm:py-7">
           <p className="text-gradient font-display text-[clamp(2.6rem,8vw,4.4rem)] leading-none font-extrabold">
             <Counter to={skillCount} duration={2.1} />
           </p>

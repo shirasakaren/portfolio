@@ -141,7 +141,7 @@ export default function ContactPage() {
             <Reveal delay={0.2}>
               <div className="rounded-blob relative overflow-hidden border border-sakura-200/70 bg-linear-to-br from-sakura-100/70 to-lilac-200/40 p-6 text-center">
                 <ReactionClip
-                  name="delighted"
+                  name="sparkleEyes"
                   size="mx-auto w-28"
                   rounded="rounded-[1.3rem]"
                 />
