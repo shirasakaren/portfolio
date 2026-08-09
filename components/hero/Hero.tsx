@@ -17,7 +17,7 @@ import { usePrefersReducedMotion } from "@/lib/motion";
  *   the Japanese name → what she does → a way to say hi.
  */
 export function Hero() {
-  const { stage, isLive, skipped } = useBoot();
+  const { stage, isLive, skipped, markIntroDone } = useBoot();
   const reduced = usePrefersReducedMotion();
 
   // Direct entry (no boot sequence) shouldn't sit on a blank hero.
@@ -30,10 +30,19 @@ export function Hero() {
     return () => clearTimeout(t);
   }, [skipped]);
 
+  // The last thing to animate is the tail block fading up; once that is under
+  // way the intro is effectively over and scrolling can be handed back.
+  useEffect(() => {
+    if (tailActive) markIntroDone();
+  }, [tailActive, markIntroDone]);
+
   const videoPlaying = stage !== "loading";
 
   return (
-    <section className="relative flex h-svh min-h-[600px] w-full items-center overflow-hidden">
+    <section
+      id="hero"
+      className="relative flex h-svh w-full items-center overflow-hidden"
+    >
       <HeroVideo play={videoPlaying} />
 
       <div className="mx-auto flex w-full max-w-[1600px] justify-center px-6 sm:px-10 md:justify-end">

@@ -138,8 +138,14 @@ body {
    is set by an inline script before the first paint — and never set at all if
    JS is off, which is why the shield defaults to hidden. */
 html[data-booting="true"] body {
-  overflow: hidden;
   background-color: #ffffff;
+}
+
+/* Scroll stays locked past the shield: through the dandelions, the hello, and
+   the name settling. Released separately so the page can be *visible* well
+   before it is scrollable. */
+html[data-locked="true"] body {
+  overflow: hidden;
 }
 
 #boot-shield {
@@ -236,6 +242,25 @@ html[data-booting="true"] #boot-shield {
     0 1px 0 rgba(255, 255, 255, 0.8),
     0 0 10px rgba(255, 255, 255, 0.95),
     0 0 24px rgba(255, 250, 253, 0.8);
+}
+
+/* A readable patch behind a single hero-mode nav link — sized to its own text
+   plus a little, fading out to the right and softly top-and-bottom, so the
+   video keeps showing through everywhere else. The mask carries the blur as
+   well as the tint, so the whole patch dissolves rather than ending on an edge. */
+@utility nav-patch {
+  --nav-patch-mask: radial-gradient(
+    100% 52% at 0% 50%,
+    #000 0%,
+    #000 46%,
+    rgba(0, 0, 0, 0.6) 72%,
+    transparent 100%
+  );
+  background-color: color-mix(in srgb, var(--color-cream) 76%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  -webkit-mask-image: var(--nav-patch-mask);
+  mask-image: var(--nav-patch-mask);
 }
 
 @utility card-soft {

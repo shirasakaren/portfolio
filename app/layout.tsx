@@ -6,6 +6,7 @@ import { AudioProvider } from "@/components/audio/AudioProvider";
 import { AudioStarter } from "@/components/audio/AudioStarter";
 import { BootProvider } from "@/components/boot/BootProvider";
 import { Footer } from "@/components/site/Footer";
+import { ScrollController } from "@/components/scroll/ScrollController";
 import { Header } from "@/components/site/Header";
 import { profile } from "@/lib/content";
 
@@ -96,7 +97,7 @@ export const viewport: Viewport = {
  * is exactly what a no-JS visitor wants. The timeout is a dead-man's switch:
  * if the boot sequence ever fails to run, the page frees itself.
  */
-const BOOT_SHIELD_SCRIPT = `(function(){try{var p=location.pathname;if(p==="/"||p==="/index.html"){var d=document.documentElement;d.setAttribute("data-booting","true");setTimeout(function(){d.removeAttribute("data-booting")},16000)}}catch(e){}})();`;
+const BOOT_SHIELD_SCRIPT = `(function(){try{var p=location.pathname;if(p==="/"||p==="/index.html"){var d=document.documentElement;d.setAttribute("data-booting","true");d.setAttribute("data-locked","true");try{history.scrollRestoration="manual"}catch(e2){}window.scrollTo(0,0);setTimeout(function(){d.removeAttribute("data-booting");d.removeAttribute("data-locked")},18000)}}catch(e){}})();`;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
@@ -119,6 +120,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <AudioProvider>
           <BootProvider>
             <AudioStarter />
+            <ScrollController />
             <Header />
             <div id="content" className="flex-1">
               {children}

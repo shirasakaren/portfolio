@@ -38,12 +38,18 @@ type BootValue = {
   isLive: boolean;
   /** This page never had a boot sequence (direct entry to an inner page). */
   skipped: boolean;
+  /** Scroll is held until the intro has fully played out. */
+  scrollLocked: boolean;
+  /** Called by the hero once its own sequence has landed. */
+  markIntroDone: () => void;
 };
 
 const BootContext = createContext<BootValue>({
   stage: "settled",
   isLive: true,
   skipped: true,
+  scrollLocked: false,
+  markIntroDone: () => {},
 });
 
 export function useBoot(): BootValue {
@@ -53,6 +59,10 @@ export function useBoot(): BootValue {
 /** The loading animation never flashes past — it holds for at least this long. */
 const MIN_LOADER_MS = 1500;
 const LOADER_FADE_MS = 620;
+/** Breathing room between the name settling and the page becoming scrollable. */
+const SCROLL_RELEASE_DELAY_MS = 1400;
+/** Nothing may hold the page hostage longer than this, whatever goes wrong. */
+const SCROLL_RELEASE_CEILING_MS = 15_000;
 
 export function BootProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -63,7 +73,9 @@ export function BootProvider({ children }: { children: React.ReactNode }) {
   const [progress, setProgress] = useState(0);
   const [loaderOut, setLoaderOut] = useState(false);
   const [showTransition, setShowTransition] = useState(false);
+  const [scrollLocked, setScrollLocked] = useState(isHome);
   const shieldCleared = useRef(false);
+  const scrollReleased = useRef(false);
 
   /** Hand the page back to the user: unlock scroll, drop the white shield. */
   const clearShield = useCallback(() => {
@@ -72,9 +84,30 @@ export function BootProvider({ children }: { children: React.ReactNode }) {
     document.documentElement.removeAttribute("data-booting");
   }, []);
 
+  const releaseScroll = useCallback(() => {
+    if (scrollReleased.current) return;
+    scrollReleased.current = true;
+    document.documentElement.removeAttribute("data-locked");
+    setScrollLocked(false);
+  }, []);
+
+  /** The hero calls this when its last element has settled. */
+  const markIntroDone = useCallback(() => {
+    if (scrollReleased.current) return;
+    setTimeout(releaseScroll, SCROLL_RELEASE_DELAY_MS);
+  }, [releaseScroll]);
+
+  // Backstop: a stalled animation must never leave the page unscrollable.
+  useEffect(() => {
+    if (!isHome) return;
+    const t = setTimeout(releaseScroll, SCROLL_RELEASE_CEILING_MS);
+    return () => clearTimeout(t);
+  }, [isHome, releaseScroll]);
+
   useEffect(() => {
     if (!isHome) {
       clearShield();
+      releaseScroll();
       return;
     }
 
@@ -123,7 +156,7 @@ export function BootProvider({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [isHome, clearShield]);
+  }, [isHome, clearShield, releaseScroll]);
 
   const onReveal = useCallback(() => {
     clearShield();
@@ -141,8 +174,10 @@ export function BootProvider({ children }: { children: React.ReactNode }) {
       stage,
       isLive: stage === "revealed" || stage === "settled",
       skipped: !isHome,
+      scrollLocked,
+      markIntroDone,
     }),
-    [stage, isHome],
+    [stage, isHome, scrollLocked, markIntroDone],
   );
 
   return (
