@@ -1,0 +1,715 @@
+{
+  "generated": "2026-08-09T17:00:55+07:00",
+  "generator": "ffmpeg 8.1.1 (video) + cwebp/libwebp (still images)",
+  "recipes": {
+    "image_full": "cwebp -q 80, max width 1600 (never upscaled)",
+    "image_thumb": "cwebp -q 72, max width 720 (never upscaled)",
+    "video_mp4": "libx264 high profile, yuv420p, crf 27 (uploadfile: fps 20 / crf 29 to stay under 1.5 MB), +faststart, no audio, max width 1280",
+    "video_webm": "libvpx-vp9 crf 36 -b:v 0, yuv420p, no audio, max width 1280",
+    "video_poster": "still frame at ~20% of duration, cwebp -q 80, max width 1280"
+  },
+  "projects": {
+    "atlas": {
+      "name": "MGM Atlas",
+      "description": "Self-hosted project HQ web app",
+      "source": "/Users/mitdeveloper/ren/tmp/projects/atlas/frontend/docs/screenshots",
+      "output_dir": "/projects/atlas",
+      "summary": {
+        "count": 46,
+        "total_bytes": 1101154
+      },
+      "files": [
+        {
+          "file": "chat-list-page-that-shows-list-of-chat-thumb.webp",
+          "path": "/projects/atlas/chat-list-page-that-shows-list-of-chat-thumb.webp",
+          "asset": "chat-list-page-that-shows-list-of-chat",
+          "role": "thumbnail",
+          "format": "webp",
+          "width": 720,
+          "height": 392,
+          "bytes": 6710
+        },
+        {
+          "file": "chat-list-page-that-shows-list-of-chat.webp",
+          "path": "/projects/atlas/chat-list-page-that-shows-list-of-chat.webp",
+          "asset": "chat-list-page-that-shows-list-of-chat",
+          "role": "full",
+          "format": "webp",
+          "width": 1600,
+          "height": 870,
+          "bytes": 24938
+        },
+        {
+          "file": "create-a-project-page-thumb.webp",
+          "path": "/projects/atlas/create-a-project-page-thumb.webp",
+          "asset": "create-a-project-page",
+          "role": "thumbnail",
+          "format": "webp",
+          "width": 720,
+          "height": 392,
+          "bytes": 6072
+        },
+        {
+          "file": "create-a-project-page.webp",
+          "path": "/projects/atlas/create-a-project-page.webp",
+          "asset": "create-a-project-page",
+          "role": "full",
+          "format": "webp",
+          "width": 1600,
+          "height": 870,
+          "bytes": 23522
+        },
+        {
+          "file": "dashboard-list-of-projects-view-thumb.webp",
+          "path": "/projects/atlas/dashboard-list-of-projects-view-thumb.webp",
+          "asset": "dashboard-list-of-projects-view",
+          "role": "thumbnail",
+          "format": "webp",
+          "width": 720,
+          "height": 392,
+          "bytes": 23832
+        },
+        {
+          "file": "dashboard-list-of-projects-view.webp",
+          "path": "/projects/atlas/dashboard-list-of-projects-view.webp",
+          "asset": "dashboard-list-of-projects-view",
+          "role": "full",
+          "format": "webp",
+          "width": 1600,
+          "height": 870,
+          "bytes": 94434
+        },
+        {
+          "file": "dashboard-main-view-thumb.webp",
+          "path": "/projects/atlas/dashboard-main-view-thumb.webp",
+          "asset": "dashboard-main-view",
+          "role": "thumbnail",
+          "format": "webp",
+          "width": 720,
+          "height": 391,
+          "bytes": 10262
+        },
+        {
+          "file": "dashboard-main-view.webp",
+          "path": "/projects/atlas/dashboard-main-view.webp",
+          "asset": "dashboard-main-view",
+          "role": "full",
+          "format": "webp",
+          "width": 1600,
+          "height": 867,
+          "bytes": 34600
+        },
+        {
+          "file": "detailed-project-page-header-main-thumb.webp",
+          "path": "/projects/atlas/detailed-project-page-header-main-thumb.webp",
+          "asset": "detailed-project-page-header-main",
+          "role": "thumbnail",
+          "format": "webp",
+          "width": 720,
+          "height": 392,
+          "bytes": 17524
+        },
+        {
+          "file": "detailed-project-page-header-main.webp",
+          "path": "/projects/atlas/detailed-project-page-header-main.webp",
+          "asset": "detailed-project-page-header-main",
+          "role": "full",
+          "format": "webp",
+          "width": 1600,
+          "height": 870,
+          "bytes": 64398
+        },
+        {
+          "file": "general-workspace-chat-channel-thumb.webp",
+          "path": "/projects/atlas/general-workspace-chat-channel-thumb.webp",
+          "asset": "general-workspace-chat-channel",
+          "role": "thumbnail",
+          "format": "webp",
+          "width": 720,
+          "height": 392,
+          "bytes": 4910
+        },
+        {
+          "file": "general-workspace-chat-channel.webp",
+          "path": "/projects/atlas/general-workspace-chat-channel.webp",
+          "asset": "general-workspace-chat-channel",
+          "role": "full",
+          "format": "webp",
+          "width": 1600,
+          "height": 870,
+          "bytes": 20716
+        },
+        {
+          "file": "keycloak-support-login-page-thumb.webp",
+          "path": "/projects/atlas/keycloak-support-login-page-thumb.webp",
+          "asset": "keycloak-support-login-page",
+          "role": "thumbnail",
+          "format": "webp",
+          "width": 720,
+          "height": 388,
+          "bytes": 4244
+        },
+        {
+          "file": "keycloak-support-login-page.webp",
+          "path": "/projects/atlas/keycloak-support-login-page.webp",
+          "asset": "keycloak-support-login-page",
+          "role": "full",
+          "format": "webp",
+          "width": 1600,
+          "height": 861,
+          "bytes": 14180
+        },
+        {
+          "file": "main-header-thumb.webp",
+          "path": "/projects/atlas/main-header-thumb.webp",
+          "asset": "main-header",
+          "role": "thumbnail",
+          "format": "webp",
+          "width": 720,
+          "height": 288,
+          "bytes": 7526
+        },
+        {
+          "file": "main-header.webp",
+          "path": "/projects/atlas/main-header.webp",
+          "asset": "main-header",
+          "role": "full",
+          "format": "webp",
+          "width": 1600,
+          "height": 640,
+          "bytes": 21906
+        },
+        {
+          "file": "more-project-page-view-thumb.webp",
+          "path": "/projects/atlas/more-project-page-view-thumb.webp",
+          "asset": "more-project-page-view",
+          "role": "thumbnail",
+          "format": "webp",
+          "width": 720,
+          "height": 392,
+          "bytes": 23904
+        },
+        {
+          "file": "more-project-page-view.webp",
+          "path": "/projects/atlas/more-project-page-view.webp",
+          "asset": "more-project-page-view",
+          "role": "full",
+          "format": "webp",
+          "width": 1600,
+          "height": 870,
+          "bytes": 100348
+        },
+        {
+          "file": "my-work-page-thumb.webp",
+          "path": "/projects/atlas/my-work-page-thumb.webp",
+          "asset": "my-work-page",
+          "role": "thumbnail",
+          "format": "webp",
+          "width": 720,
+          "height": 392,
+          "bytes": 10238
+        },
+        {
+          "file": "my-work-page.webp",
+          "path": "/projects/atlas/my-work-page.webp",
+          "asset": "my-work-page",
+          "role": "full",
+          "format": "webp",
+          "width": 1600,
+          "height": 870,
+          "bytes": 36914
+        },
+        {
+          "file": "notifications-settings-thumb.webp",
+          "path": "/projects/atlas/notifications-settings-thumb.webp",
+          "asset": "notifications-settings",
+          "role": "thumbnail",
+          "format": "webp",
+          "width": 720,
+          "height": 392,
+          "bytes": 6464
+        },
+        {
+          "file": "notifications-settings.webp",
+          "path": "/projects/atlas/notifications-settings.webp",
+          "asset": "notifications-settings",
+          "role": "full",
+          "format": "webp",
+          "width": 1600,
+          "height": 870,
+          "bytes": 27626
+        },
+        {
+          "file": "pmo-custom-website-embed-selection-of-the-website-thumb.webp",
+          "path": "/projects/atlas/pmo-custom-website-embed-selection-of-the-website-thumb.webp",
+          "asset": "pmo-custom-website-embed-selection-of-the-website",
+          "role": "thumbnail",
+          "format": "webp",
+          "width": 720,
+          "height": 392,
+          "bytes": 4810
+        },
+        {
+          "file": "pmo-custom-website-embed-selection-of-the-website.webp",
+          "path": "/projects/atlas/pmo-custom-website-embed-selection-of-the-website.webp",
+          "asset": "pmo-custom-website-embed-selection-of-the-website",
+          "role": "full",
+          "format": "webp",
+          "width": 1600,
+          "height": 870,
+          "bytes": 19456
+        },
+        {
+          "file": "pmo-custom-website-view-the-website-added-thumb.webp",
+          "path": "/projects/atlas/pmo-custom-website-view-the-website-added-thumb.webp",
+          "asset": "pmo-custom-website-view-the-website-added",
+          "role": "thumbnail",
+          "format": "webp",
+          "width": 720,
+          "height": 392,
+          "bytes": 10550
+        },
+        {
+          "file": "pmo-custom-website-view-the-website-added.webp",
+          "path": "/projects/atlas/pmo-custom-website-view-the-website-added.webp",
+          "asset": "pmo-custom-website-view-the-website-added",
+          "role": "full",
+          "format": "webp",
+          "width": 1600,
+          "height": 870,
+          "bytes": 41820
+        },
+        {
+          "file": "pmo-files-storage-thumb.webp",
+          "path": "/projects/atlas/pmo-files-storage-thumb.webp",
+          "asset": "pmo-files-storage",
+          "role": "thumbnail",
+          "format": "webp",
+          "width": 720,
+          "height": 392,
+          "bytes": 4296
+        },
+        {
+          "file": "pmo-files-storage.webp",
+          "path": "/projects/atlas/pmo-files-storage.webp",
+          "asset": "pmo-files-storage",
+          "role": "full",
+          "format": "webp",
+          "width": 1600,
+          "height": 870,
+          "bytes": 17412
+        },
+        {
+          "file": "pmo-kanban-thumb.webp",
+          "path": "/projects/atlas/pmo-kanban-thumb.webp",
+          "asset": "pmo-kanban",
+          "role": "thumbnail",
+          "format": "webp",
+          "width": 720,
+          "height": 392,
+          "bytes": 5328
+        },
+        {
+          "file": "pmo-kanban.webp",
+          "path": "/projects/atlas/pmo-kanban.webp",
+          "asset": "pmo-kanban",
+          "role": "full",
+          "format": "webp",
+          "width": 1600,
+          "height": 870,
+          "bytes": 20992
+        },
+        {
+          "file": "pmo-list-thumb.webp",
+          "path": "/projects/atlas/pmo-list-thumb.webp",
+          "asset": "pmo-list",
+          "role": "thumbnail",
+          "format": "webp",
+          "width": 720,
+          "height": 392,
+          "bytes": 6172
+        },
+        {
+          "file": "pmo-list.webp",
+          "path": "/projects/atlas/pmo-list.webp",
+          "asset": "pmo-list",
+          "role": "full",
+          "format": "webp",
+          "width": 1600,
+          "height": 870,
+          "bytes": 24674
+        },
+        {
+          "file": "pmo-notes-thumb.webp",
+          "path": "/projects/atlas/pmo-notes-thumb.webp",
+          "asset": "pmo-notes",
+          "role": "thumbnail",
+          "format": "webp",
+          "width": 720,
+          "height": 392,
+          "bytes": 10554
+        },
+        {
+          "file": "pmo-notes.webp",
+          "path": "/projects/atlas/pmo-notes.webp",
+          "asset": "pmo-notes",
+          "role": "full",
+          "format": "webp",
+          "width": 1600,
+          "height": 870,
+          "bytes": 40264
+        },
+        {
+          "file": "pmo-overview-thumb.webp",
+          "path": "/projects/atlas/pmo-overview-thumb.webp",
+          "asset": "pmo-overview",
+          "role": "thumbnail",
+          "format": "webp",
+          "width": 720,
+          "height": 392,
+          "bytes": 7836
+        },
+        {
+          "file": "pmo-overview.webp",
+          "path": "/projects/atlas/pmo-overview.webp",
+          "asset": "pmo-overview",
+          "role": "full",
+          "format": "webp",
+          "width": 1600,
+          "height": 870,
+          "bytes": 33804
+        },
+        {
+          "file": "pmo-team-view-thumb.webp",
+          "path": "/projects/atlas/pmo-team-view-thumb.webp",
+          "asset": "pmo-team-view",
+          "role": "thumbnail",
+          "format": "webp",
+          "width": 720,
+          "height": 392,
+          "bytes": 6196
+        },
+        {
+          "file": "pmo-team-view.webp",
+          "path": "/projects/atlas/pmo-team-view.webp",
+          "asset": "pmo-team-view",
+          "role": "full",
+          "format": "webp",
+          "width": 1600,
+          "height": 870,
+          "bytes": 24986
+        },
+        {
+          "file": "pmo-timelines-gantt-thumb.webp",
+          "path": "/projects/atlas/pmo-timelines-gantt-thumb.webp",
+          "asset": "pmo-timelines-gantt",
+          "role": "thumbnail",
+          "format": "webp",
+          "width": 720,
+          "height": 392,
+          "bytes": 5324
+        },
+        {
+          "file": "pmo-timelines-gantt.webp",
+          "path": "/projects/atlas/pmo-timelines-gantt.webp",
+          "asset": "pmo-timelines-gantt",
+          "role": "full",
+          "format": "webp",
+          "width": 1600,
+          "height": 870,
+          "bytes": 21538
+        },
+        {
+          "file": "pmo-whiteboards-thumb.webp",
+          "path": "/projects/atlas/pmo-whiteboards-thumb.webp",
+          "asset": "pmo-whiteboards",
+          "role": "thumbnail",
+          "format": "webp",
+          "width": 720,
+          "height": 392,
+          "bytes": 15564
+        },
+        {
+          "file": "pmo-whiteboards.webp",
+          "path": "/projects/atlas/pmo-whiteboards.webp",
+          "asset": "pmo-whiteboards",
+          "role": "full",
+          "format": "webp",
+          "width": 1600,
+          "height": 870,
+          "bytes": 69708
+        },
+        {
+          "file": "project-specific-chat-channel-thumb.webp",
+          "path": "/projects/atlas/project-specific-chat-channel-thumb.webp",
+          "asset": "project-specific-chat-channel",
+          "role": "thumbnail",
+          "format": "webp",
+          "width": 720,
+          "height": 392,
+          "bytes": 7516
+        },
+        {
+          "file": "project-specific-chat-channel.webp",
+          "path": "/projects/atlas/project-specific-chat-channel.webp",
+          "asset": "project-specific-chat-channel",
+          "role": "full",
+          "format": "webp",
+          "width": 1600,
+          "height": 870,
+          "bytes": 29072
+        },
+        {
+          "file": "voice-chat-thumb.webp",
+          "path": "/projects/atlas/voice-chat-thumb.webp",
+          "asset": "voice-chat",
+          "role": "thumbnail",
+          "format": "webp",
+          "width": 720,
+          "height": 391,
+          "bytes": 19704
+        },
+        {
+          "file": "voice-chat.webp",
+          "path": "/projects/atlas/voice-chat.webp",
+          "asset": "voice-chat",
+          "role": "full",
+          "format": "webp",
+          "width": 1598,
+          "height": 867,
+          "bytes": 68310
+        }
+      ]
+    },
+    "tenki": {
+      "name": "Tenki Weather",
+      "description": "Unity WebGL weather chatbot",
+      "source": "/Users/mitdeveloper/ren/tmp/projects/tenki/Images",
+      "output_dir": "/projects/tenki",
+      "summary": {
+        "count": 20,
+        "total_bytes": 15007273
+      },
+      "files": [
+        {
+          "file": "AlurChat-thumb.webp",
+          "path": "/projects/tenki/AlurChat-thumb.webp",
+          "asset": "AlurChat",
+          "role": "thumbnail",
+          "format": "webp",
+          "width": 720,
+          "height": 401,
+          "bytes": 21740
+        },
+        {
+          "file": "AlurChat.webp",
+          "path": "/projects/tenki/AlurChat.webp",
+          "asset": "AlurChat",
+          "role": "full",
+          "format": "webp",
+          "width": 1600,
+          "height": 891,
+          "bytes": 82872
+        },
+        {
+          "file": "CaraPakai-thumb.webp",
+          "path": "/projects/tenki/CaraPakai-thumb.webp",
+          "asset": "CaraPakai",
+          "role": "thumbnail",
+          "format": "webp",
+          "width": 720,
+          "height": 399,
+          "bytes": 35050
+        },
+        {
+          "file": "CaraPakai.webp",
+          "path": "/projects/tenki/CaraPakai.webp",
+          "asset": "CaraPakai",
+          "role": "full",
+          "format": "webp",
+          "width": 1600,
+          "height": 886,
+          "bytes": 114466
+        },
+        {
+          "file": "UploadFile-thumb.webp",
+          "path": "/projects/tenki/UploadFile-thumb.webp",
+          "asset": "UploadFile",
+          "role": "thumbnail",
+          "format": "webp",
+          "width": 720,
+          "height": 396,
+          "bytes": 4842
+        },
+        {
+          "file": "UploadFile.webp",
+          "path": "/projects/tenki/UploadFile.webp",
+          "asset": "UploadFile",
+          "role": "full",
+          "format": "webp",
+          "width": 1600,
+          "height": 880,
+          "bytes": 19840
+        },
+        {
+          "file": "hero-poster.webp",
+          "path": "/projects/tenki/hero-poster.webp",
+          "asset": "hero",
+          "role": "poster",
+          "format": "webp",
+          "width": 852,
+          "height": 480,
+          "bytes": 112298
+        },
+        {
+          "file": "hero-thumb.webp",
+          "path": "/projects/tenki/hero-thumb.webp",
+          "asset": "hero",
+          "role": "thumbnail",
+          "format": "webp",
+          "width": 720,
+          "height": 400,
+          "bytes": 19092
+        },
+        {
+          "file": "hero.mp4",
+          "path": "/projects/tenki/hero.mp4",
+          "asset": "hero",
+          "role": "video",
+          "format": "mp4",
+          "width": 852,
+          "height": 480,
+          "bytes": 1487301,
+          "duration_s": 11.1
+        },
+        {
+          "file": "hero.webm",
+          "path": "/projects/tenki/hero.webm",
+          "asset": "hero",
+          "role": "video",
+          "format": "webm",
+          "width": 852,
+          "height": 480,
+          "bytes": 2858840,
+          "duration_s": 11.1
+        },
+        {
+          "file": "hero.webp",
+          "path": "/projects/tenki/hero.webp",
+          "asset": "hero",
+          "role": "full",
+          "format": "webp",
+          "width": 1600,
+          "height": 888,
+          "bytes": 67388
+        },
+        {
+          "file": "normaltext-poster.webp",
+          "path": "/projects/tenki/normaltext-poster.webp",
+          "asset": "normaltext",
+          "role": "poster",
+          "format": "webp",
+          "width": 852,
+          "height": 480,
+          "bytes": 118848
+        },
+        {
+          "file": "normaltext.mp4",
+          "path": "/projects/tenki/normaltext.mp4",
+          "asset": "normaltext",
+          "role": "video",
+          "format": "mp4",
+          "width": 852,
+          "height": 480,
+          "bytes": 1240488,
+          "duration_s": 12.93
+        },
+        {
+          "file": "normaltext.webm",
+          "path": "/projects/tenki/normaltext.webm",
+          "asset": "normaltext",
+          "role": "video",
+          "format": "webm",
+          "width": 852,
+          "height": 480,
+          "bytes": 2372805,
+          "duration_s": 12.93
+        },
+        {
+          "file": "uploadfile-poster.webp",
+          "path": "/projects/tenki/uploadfile-poster.webp",
+          "asset": "uploadfile",
+          "role": "poster",
+          "format": "webp",
+          "width": 852,
+          "height": 480,
+          "bytes": 93510
+        },
+        {
+          "file": "uploadfile.mp4",
+          "path": "/projects/tenki/uploadfile.mp4",
+          "asset": "uploadfile",
+          "role": "video",
+          "format": "mp4",
+          "width": 852,
+          "height": 480,
+          "bytes": 1302649,
+          "duration_s": 39.4
+        },
+        {
+          "file": "uploadfile.webm",
+          "path": "/projects/tenki/uploadfile.webm",
+          "asset": "uploadfile",
+          "role": "video",
+          "format": "webm",
+          "width": 852,
+          "height": 480,
+          "bytes": 2626227,
+          "duration_s": 39.4
+        },
+        {
+          "file": "weatherresult-poster.webp",
+          "path": "/projects/tenki/weatherresult-poster.webp",
+          "asset": "weatherresult",
+          "role": "poster",
+          "format": "webp",
+          "width": 852,
+          "height": 480,
+          "bytes": 126496
+        },
+        {
+          "file": "weatherresult.mp4",
+          "path": "/projects/tenki/weatherresult.mp4",
+          "asset": "weatherresult",
+          "role": "video",
+          "format": "mp4",
+          "width": 852,
+          "height": 480,
+          "bytes": 781002,
+          "duration_s": 8.37
+        },
+        {
+          "file": "weatherresult.webm",
+          "path": "/projects/tenki/weatherresult.webm",
+          "asset": "weatherresult",
+          "role": "video",
+          "format": "webm",
+          "width": 852,
+          "height": 480,
+          "bytes": 1521519,
+          "duration_s": 8.37
+        }
+      ],
+      "skipped": [
+        {
+          "file": "JawabanCuaca.png",
+          "reason": "0-byte source file"
+        }
+      ]
+    }
+  },
+  "summary": {
+    "count": 66,
+    "total_bytes": 16108427
+  }
+}

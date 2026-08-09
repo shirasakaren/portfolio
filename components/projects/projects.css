@@ -1,0 +1,132 @@
+/* ───────────────────────────────────────────────────────────────────
+   Motion and textures that only the Projects page needs.
+
+   Everything shared lives in app/globals.css; this file exists so the
+   design system doesn't grow a section for one screen. All of it is
+   pure CSS, which means `prefers-reduced-motion` in globals.css already
+   flattens it without a second implementation here.
+   ─────────────────────────────────────────────────────────────────── */
+
+/* ── the sealed plate ──────────────────────────────────────────────
+   A diagram we're not allowed to show still has to look designed
+   rather than broken, so the plate gets a slow scanning light and a
+   drifting hazard weave — the visual language of "there is something
+   here, and it is deliberately closed". */
+
+@keyframes seal-sweep {
+  0% {
+    transform: translateY(-140%);
+    opacity: 0;
+  }
+  14% {
+    opacity: 1;
+  }
+  86% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(340%);
+    opacity: 0;
+  }
+}
+
+.seal-sweep {
+  animation: seal-sweep 7s cubic-bezier(0.33, 0.02, 0.2, 1) infinite;
+}
+
+@keyframes hazard-drift {
+  to {
+    background-position: 68px 0;
+  }
+}
+
+.hazard-stripes {
+  background-image: repeating-linear-gradient(
+    45deg,
+    color-mix(in srgb, var(--color-sakura-900) 30%, transparent) 0 7px,
+    transparent 7px 22px
+  );
+  animation: hazard-drift 5.5s linear infinite;
+}
+
+/* ── blueprint paper ───────────────────────────────────────────────
+   The backing for anything that is an architecture drawing: a coarse
+   grid with a five-times finer one inside it, the way engineering
+   paper is actually ruled. */
+
+.blueprint-paper {
+  background-image:
+    linear-gradient(
+      color-mix(in srgb, var(--color-sakura-300) 45%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--color-sakura-300) 45%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      color-mix(in srgb, var(--color-sakura-200) 60%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--color-sakura-200) 60%, transparent) 1px,
+      transparent 1px
+    );
+  background-size:
+    100px 100px,
+    100px 100px,
+    20px 20px,
+    20px 20px;
+}
+
+/* ── the rack ──────────────────────────────────────────────────────
+   Punched mounting holes down both rails of a 19" cabinet. One
+   gradient, repeated — cheaper than nineteen elements. */
+
+.rack-rail {
+  background-image: radial-gradient(
+    circle at 50% 7px,
+    color-mix(in srgb, var(--color-sakura-800) 26%, transparent) 1.6px,
+    transparent 2.2px
+  );
+  background-size: 100% 16px;
+}
+
+/* Front-panel vents on each rack unit. */
+.rack-vents {
+  background-image: repeating-linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--color-sakura-700) 22%, transparent) 0 1.5px,
+    transparent 1.5px 5px
+  );
+}
+
+/* ── crest ─────────────────────────────────────────────────────────
+   The constellation behind projects with no screenshot turns slowly,
+   so the plate reads as generated rather than as a missing asset. */
+
+@keyframes crest-orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.crest-orbit {
+  transform-origin: 50% 50%;
+  animation: crest-orbit 54s linear infinite;
+}
+
+/* ── diagram viewer ────────────────────────────────────────────────
+   The pan surface owns every pointer gesture inside it; without this
+   a drag on a touchscreen scrolls the page instead of the drawing. */
+
+.pan-surface {
+  touch-action: none;
+  cursor: grab;
+}
+
+.pan-surface[data-panning="true"] {
+  cursor: grabbing;
+}

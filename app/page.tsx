@@ -1,122 +1,208 @@
 import Link from "next/link";
 
 import { Hero } from "@/components/hero/Hero";
-import { Card, Chip, SectionTitle } from "@/components/ui";
-import { lineageNote, profile, stack } from "@/lib/content";
+import {
+  FeaturedWork,
+  LogoWall,
+  PersonalTeaser,
+  Pillars,
+} from "@/components/home/HomeSections";
+import { Counter, Magnetic, Reveal, SplitReveal, Stagger, StaggerItem } from "@/components/motion";
 import { PageTransition } from "@/components/site/PageTransition";
+import { Kicker, PetalRule, Sparkles, StatTile } from "@/components/ui";
+import { ReactionClip } from "@/components/visual/ReactionClip";
+import {
+  experience,
+  profile,
+  projects,
+  skillCount,
+  stack,
+  yearsOfExperience,
+} from "@/lib/content";
 
-const doing = [
-  {
-    emoji: "☁️",
-    title: "Cloud foundations",
-    body: "Landing zones, identity, network topology and guardrails — expressed once in code and specialised per provider. Six clouds, no snowflakes.",
-  },
-  {
-    emoji: "⎈",
-    title: "Platform & delivery",
-    body: "Kubernetes that people actually enjoy shipping to: GitOps, progressive delivery, policy at admission, and immutable nodes underneath.",
-  },
-  {
-    emoji: "🛡️",
-    title: "Security engineering",
-    body: "Signed supply chains, secrets that never touch a repo, and infrastructure I attack myself before someone else volunteers.",
-  },
-  {
-    emoji: "📊",
-    title: "Reliability & observability",
-    body: "Native histograms, honest load tests, correlated traces and logs. Alerts that arrive with the dashboard and the runbook attached.",
-  },
-];
+const cloudCount = stack.find((g) => g.id === "clouds")?.items.length ?? 0;
+const roleCount = experience.reduce((n, c) => n + c.roles.length, 0);
 
 export default function Home() {
-  const clouds = stack.find((g) => g.id === "clouds");
-
   return (
     <PageTransition>
       <Hero />
 
-      <div className="relative bg-sakura-50">
-        <div className="mx-auto w-full max-w-[1180px] px-6 py-24 sm:px-10 sm:py-32">
-          <section aria-labelledby="what-i-do">
-            <p className="font-display text-xs font-bold tracking-[0.34em] text-sakura-500 uppercase">
-              what I do
-            </p>
+      {/* The whole page below the hero sits on the shader field, so it only
+          needs to establish its own edge — not its own background. */}
+      <div className="relative">
+        {/* ── the turn ─────────────────────────────────────────────── */}
+
+        <section
+          aria-labelledby="intro"
+          className="mx-auto w-full max-w-[1180px] px-6 pt-24 sm:px-10 sm:pt-32"
+        >
+          <div className="grid items-center gap-10 lg:grid-cols-[1.15fr_0.85fr]">
+            <div>
+              <Reveal y={14}>
+                <Kicker>so, who is keeping the lights on</Kicker>
+              </Reveal>
+              <h2
+                id="intro"
+                className="text-gradient mt-4 font-display text-[clamp(2rem,5.2vw,3.5rem)] leading-[1.05] font-extrabold tracking-[-0.02em]"
+              >
+                <SplitReveal text="Infrastructure that stays boring, on purpose." />
+              </h2>
+              <Reveal delay={0.2}>
+                <p className="mt-6 max-w-xl text-lg leading-relaxed text-ink-500">
+                  The best compliment my work ever gets is silence — no
+                  incidents, no surprises, no 3AM pages. Getting there is the
+                  interesting part, and it is most of what is on this site.
+                </p>
+              </Reveal>
+              <Reveal delay={0.28}>
+                <p className="mt-4 max-w-xl text-ink-500">
+                  <span className="font-semibold text-sakura-700">
+                    {profile.headline}
+                  </span>
+                </p>
+              </Reveal>
+            </div>
+
+            <Reveal delay={0.15} className="justify-self-center lg:justify-self-end">
+              <ReactionClip
+                name="looking"
+                size="w-44 sm:w-56"
+                caption="…well? go on then"
+              />
+            </Reveal>
+          </div>
+        </section>
+
+        {/* ── the wall of logos ────────────────────────────────────── */}
+
+        <section aria-label="Technologies" className="mt-16 sm:mt-20">
+          <LogoWall />
+          <div className="mx-auto mt-6 w-full max-w-[1180px] px-6 text-center sm:px-10">
+            <Link
+              href="/stack"
+              className="inline-flex items-center gap-2 font-display text-sm font-bold text-sakura-700 underline decoration-sakura-300 decoration-2 underline-offset-4 transition-colors hover:text-sakura-600"
+            >
+              all {skillCount} of them, sorted properly <span aria-hidden>→</span>
+            </Link>
+          </div>
+        </section>
+
+        {/* ── numbers ──────────────────────────────────────────────── */}
+
+        <section
+          aria-label="By the numbers"
+          className="mx-auto mt-20 w-full max-w-[1180px] px-6 sm:px-10"
+        >
+          <Stagger className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+            {[
+              { value: yearsOfExperience(), suffix: "+", label: "years on call" },
+              { value: roleCount, label: "roles, 7 companies" },
+              { value: cloudCount, label: "clouds, one pattern" },
+              { value: projects.length, label: "builds you can read about" },
+            ].map((s) => (
+              <StaggerItem key={s.label}>
+                <StatTile
+                  value={<Counter to={s.value} suffix={s.suffix ?? ""} />}
+                  label={s.label}
+                />
+              </StaggerItem>
+            ))}
+          </Stagger>
+        </section>
+
+        {/* ── pillars ──────────────────────────────────────────────── */}
+
+        <section
+          aria-labelledby="what-i-do"
+          className="mx-auto mt-24 w-full max-w-[1180px] px-6 sm:px-10"
+        >
+          <Reveal>
+            <Kicker>what I actually do all day</Kicker>
             <h2
               id="what-i-do"
-              className="text-gradient mt-3 max-w-3xl font-display text-[clamp(1.9rem,4.4vw,3rem)] leading-[1.1] font-extrabold tracking-[-0.02em]"
+              className="mt-3 max-w-2xl font-display text-[clamp(1.7rem,4vw,2.6rem)] leading-tight font-extrabold text-sakura-800"
             >
-              Infrastructure that stays boring, on purpose.
+              Four things, and they all feed each other.
             </h2>
-            <p className="mt-5 max-w-2xl text-lg leading-relaxed text-ink-500">
-              The best compliment my work gets is silence — no incidents, no
-              surprises, no 3AM pages. Getting there is the interesting part.
-            </p>
+          </Reveal>
+          <div className="mt-10">
+            <Pillars />
+          </div>
+        </section>
 
-            <div className="mt-12 grid gap-5 sm:grid-cols-2">
-              {doing.map((item) => (
-                <Card key={item.title} className="hover:-translate-y-1">
-                  <span aria-hidden className="text-3xl">
-                    {item.emoji}
-                  </span>
-                  <h3 className="mt-4 font-display text-xl font-extrabold text-sakura-800">
-                    {item.title}
-                  </h3>
-                  <p className="mt-2.5 leading-relaxed text-ink-500">
-                    {item.body}
-                  </p>
-                </Card>
-              ))}
-            </div>
-          </section>
+        {/* ── featured work ────────────────────────────────────────── */}
 
-          {clouds && (
-            <section aria-labelledby="clouds" className="mt-24">
-              <SectionTitle emoji={clouds.emoji} note={clouds.note}>
-                <span id="clouds">{clouds.title}</span>
-              </SectionTitle>
-              <ul className="flex flex-wrap gap-2">
-                {clouds.items.map((item) => (
-                  <Chip key={item}>{item}</Chip>
-                ))}
-              </ul>
-              <Link
-                href="/stack"
-                className="mt-7 inline-flex items-center gap-2 font-display font-bold text-sakura-700 underline decoration-sakura-300 decoration-2 underline-offset-4 transition-colors hover:text-sakura-600"
+        <section
+          aria-labelledby="featured"
+          className="mx-auto mt-24 w-full max-w-[1180px] px-6 sm:px-10"
+        >
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <Reveal>
+              <Kicker>selected builds</Kicker>
+              <h2
+                id="featured"
+                className="mt-3 font-display text-[clamp(1.7rem,4vw,2.6rem)] leading-tight font-extrabold text-sakura-800"
               >
-                see the whole toolbox →
+                Three I am proudest of.
+              </h2>
+            </Reveal>
+            <Reveal delay={0.1}>
+              <Link
+                href="/projects"
+                className="inline-flex items-center gap-2 rounded-full border border-sakura-300 bg-white/70 px-5 py-2.5 font-display text-sm font-bold text-sakura-700 transition-colors hover:bg-sakura-100"
+              >
+                the whole quest log <span aria-hidden>→</span>
               </Link>
-            </section>
-          )}
+            </Reveal>
+          </div>
+          <div className="mt-10">
+            <FeaturedWork />
+          </div>
+        </section>
 
-          <section className="rounded-blob mt-24 border border-sakura-200/70 bg-linear-to-br from-white/80 via-sakura-100/60 to-lilac-200/40 p-8 backdrop-blur-sm sm:p-12">
-            <h2 className="font-display text-2xl font-extrabold text-sakura-800">
-              {lineageNote.title}
-            </h2>
-            <p className="mt-4 max-w-3xl text-lg leading-relaxed text-ink-700">
-              {lineageNote.body}
-            </p>
-            <p lang="ja" className="mt-6 font-jp text-lg text-sakura-700">
-              {profile.lineageJa}
-            </p>
-          </section>
-
-          <section className="mt-24 text-center">
-            <h2 className="text-gradient font-display text-[clamp(1.8rem,4vw,2.8rem)] font-extrabold">
-              Got something that needs keeping alive?
-            </h2>
-            <p className="mx-auto mt-4 max-w-xl text-lg text-ink-500">
-              Coffee, matcha, and a very tidy{" "}
-              <code className="font-mono text-sakura-700">terraform plan</code>{" "}
-              accepted as payment. 🍵
-            </p>
-            <Link
-              href="/contact"
-              className="mt-8 inline-flex items-center gap-2 rounded-full bg-linear-to-r from-sakura-600 to-lilac-400 px-8 py-4 font-display text-lg font-bold text-white shadow-[0_14px_36px_-12px_rgba(214,51,108,0.7)] transition-transform duration-300 hover:-translate-y-0.5"
-            >
-              say hi <span aria-hidden>♡</span>
-            </Link>
-          </section>
+        <div className="mx-auto w-full max-w-[1180px] px-6 sm:px-10">
+          <PetalRule className="mt-24" />
         </div>
+
+        {/* ── the person ───────────────────────────────────────────── */}
+
+        <section
+          aria-label="Off the clock"
+          className="mx-auto mt-16 w-full max-w-[1180px] px-6 sm:px-10"
+        >
+          <PersonalTeaser />
+        </section>
+
+        {/* ── cta ──────────────────────────────────────────────────── */}
+
+        <section className="mx-auto mt-24 w-full max-w-[1180px] px-6 pb-8 sm:px-10">
+          <Reveal>
+            <div className="rounded-blob relative overflow-hidden border border-sakura-200/70 bg-linear-to-br from-sakura-100/80 via-white/60 to-lilac-200/50 px-6 py-16 text-center sm:px-12">
+              <Sparkles count={14} className="opacity-60" />
+              <div className="relative">
+                <h2 className="text-gradient font-display text-[clamp(1.8rem,4.6vw,3rem)] leading-tight font-extrabold">
+                  Got something that needs keeping alive?
+                </h2>
+                <p className="mx-auto mt-4 max-w-xl text-lg text-ink-500">
+                  Coffee, matcha, and a very tidy{" "}
+                  <code className="rounded-md bg-white/70 px-1.5 py-0.5 font-mono text-[0.9em] text-sakura-700">
+                    terraform plan
+                  </code>{" "}
+                  accepted as payment. 🍵
+                </p>
+                <Magnetic className="mt-9">
+                  <Link
+                    href="/contact"
+                    className="inline-flex items-center gap-2 rounded-full bg-linear-to-r from-sakura-600 to-lilac-400 px-8 py-4 font-display text-lg font-bold text-white shadow-[0_14px_36px_-12px_rgba(214,51,108,0.7)]"
+                  >
+                    say hi <span aria-hidden>♡</span>
+                  </Link>
+                </Magnetic>
+              </div>
+            </div>
+          </Reveal>
+        </section>
       </div>
     </PageTransition>
   );

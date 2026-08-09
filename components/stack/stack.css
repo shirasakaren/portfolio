@@ -1,0 +1,196 @@
+/* ───────────────────────────────────────────────────────────────────
+   ✿ Stack page — the bits Tailwind can't express
+   Only two kinds of rule live here: keyframes, and state that is driven
+   by a data attribute rather than a class. Everything else is utilities.
+   ─────────────────────────────────────────────────────────────────── */
+
+/* ── the tile ─────────────────────────────────────────────────────────
+   219 tiles change state on every keystroke, so the state has to be cheap.
+   One attribute flip per tile, and the browser interpolates opacity,
+   transform and box-shadow on the compositor — React never sees a frame.
+
+   Hover and dim both want the transform, so they each own a variable and
+   the rule composes them; `transition: transform` still interpolates the
+   resulting matrix, which is the whole point. */
+
+.stack-tile {
+  --tile-y: 0px;
+  --tile-s: 1;
+  --brand: var(--color-sakura-600);
+  transform: translate3d(0, var(--tile-y), 0) scale(var(--tile-s));
+  transition:
+    transform 420ms var(--ease-petal),
+    opacity 360ms var(--ease-petal),
+    box-shadow 360ms var(--ease-petal),
+    border-color 360ms var(--ease-petal);
+}
+
+@media (hover: hover) {
+  .stack-tile:hover {
+    --tile-y: -4px;
+  }
+  /* On hover a mark takes its own brand colour. At rest, never — the wall
+     has to read as one palette or it reads as a sticker album. */
+  .stack-tile:hover .stack-mark {
+    color: var(--brand);
+  }
+}
+
+/* Filtered out. Still in the document, still in the a11y tree, just quiet —
+   collapsing the grid instead would move everything under the pointer and
+   throw away the reader's place on the page. */
+.stack-tile[data-dim="true"] {
+  opacity: 0.17;
+  --tile-s: 0.955;
+}
+
+@media (hover: hover) {
+  .stack-tile[data-dim="true"]:hover {
+    opacity: 0.55;
+    --tile-y: 0px;
+  }
+}
+
+/* A match keeps its brand colour permanently — searching "gitops" makes Argo
+   and Flux bloom into their own blues while the rest of the wall greys out. */
+.stack-tile[data-hit="true"] {
+  z-index: 2;
+  border-color: color-mix(in srgb, var(--brand) 60%, transparent);
+  box-shadow:
+    0 0 0 1.5px color-mix(in srgb, var(--brand) 38%, transparent),
+    0 14px 34px -18px color-mix(in srgb, var(--brand) 85%, transparent);
+}
+
+.stack-tile[data-hit="true"] .stack-mark {
+  color: var(--brand);
+}
+
+.stack-tile[data-hit="true"] .stack-mark-frame {
+  animation: stack-mark-pop 640ms var(--ease-petal);
+  border-color: color-mix(in srgb, var(--brand) 35%, transparent);
+  background: color-mix(in srgb, var(--brand) 9%, var(--color-cream));
+}
+
+@keyframes stack-mark-pop {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+  38% {
+    transform: scale(1.22) rotate(-7deg);
+  }
+  70% {
+    transform: scale(0.96) rotate(3deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+.stack-mark {
+  transition: color 320ms var(--ease-petal);
+}
+
+/* The holographic sweep is reserved for daily drivers, and it only *runs*
+   under the pointer — 65 elements animating a background position all the
+   time is a paint cost nobody asked for. */
+.stack-tile .stack-foil {
+  animation-play-state: paused;
+}
+
+@media (hover: hover) {
+  .stack-tile:hover .stack-foil {
+    animation-play-state: running;
+  }
+}
+
+/* ── arrival ──────────────────────────────────────────────────────────
+   One IntersectionObserver marks a whole section as shown; the tiles then
+   deal themselves in on a CSS delay. No per-tile observer, no per-tile
+   React state — the entrance of 219 elements costs twelve callbacks.
+
+   `backwards` rather than `both`: the fill has to cover the delay, but once
+   the animation is done the tile must get its own transform back, or hover
+   and dim would both be dead on arrival. */
+
+.stack-section:not([data-shown="true"]) .stack-grid > * {
+  opacity: 0;
+}
+
+.stack-section[data-shown="true"] .stack-grid > * {
+  animation: stack-tile-in 560ms var(--ease-petal) backwards;
+  animation-delay: calc(var(--i, 0) * 18ms);
+}
+
+@keyframes stack-tile-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 16px, 0) scale(0.93);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ── copy button ──────────────────────────────────────────────────────
+   Confirmation you can see from across the room. */
+
+@keyframes stack-burst {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(0.4);
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--bx), var(--by), 0) scale(1.1);
+  }
+}
+
+.stack-petal {
+  animation: stack-burst 900ms var(--ease-drift) forwards;
+}
+
+/* ── empty state ──────────────────────────────────────────────────────
+   The flower gives up. */
+
+@keyframes stack-wilt {
+  0%,
+  100% {
+    transform: rotate(-14deg) translateY(0);
+  }
+  50% {
+    transform: rotate(-22deg) translateY(3px);
+  }
+}
+
+.stack-wilt {
+  animation: stack-wilt 3.4s ease-in-out infinite;
+  transform-origin: 50% 90%;
+}
+
+/* ── motion safety ────────────────────────────────────────────────────
+   globals.css already crushes every duration to nothing, but an
+   animation-delay survives that — which would leave the wall blank for half
+   a second, and blank forever if the observer never fires. So: no entrance
+   at all, everything at rest, visible. */
+
+@media (prefers-reduced-motion: reduce) {
+  .stack-section .stack-grid > * {
+    animation: none !important;
+    animation-delay: 0ms !important;
+    opacity: 1;
+  }
+  .stack-tile,
+  .stack-tile[data-hit="true"] .stack-mark-frame {
+    animation: none !important;
+  }
+  .stack-tile {
+    --tile-y: 0px;
+  }
+  .stack-foil {
+    display: none;
+  }
+}

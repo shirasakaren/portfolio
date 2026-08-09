@@ -1,13 +1,11 @@
 import Link from "next/link";
 
 import { Lottie } from "@/components/lottie/Lottie";
-import { Petals } from "@/components/ui";
 import { PageTransition } from "@/components/site/PageTransition";
 
 export default function NotFound() {
   return (
     <PageTransition>
-      <Petals />
       <main className="mx-auto flex min-h-svh w-full max-w-3xl flex-col items-center justify-center px-6 py-32 text-center">
         <Lottie
           src="/404.lottie"

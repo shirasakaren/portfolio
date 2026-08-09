@@ -1,0 +1,167 @@
+{
+  "tsundere-pause": {
+    "width": 480,
+    "height": 360,
+    "durationSeconds": 4.4,
+    "bytes": {
+      "mp4": 341578,
+      "webm": 518345,
+      "webp": 587094,
+      "poster": 47470
+    }
+  },
+  "happy-bounce": {
+    "width": 480,
+    "height": 360,
+    "durationSeconds": 2.667,
+    "bytes": {
+      "mp4": 339223,
+      "webm": 518542,
+      "webp": 518132,
+      "poster": 43882
+    }
+  },
+  "cheek-puff": {
+    "width": 480,
+    "height": 480,
+    "durationSeconds": 2.59,
+    "bytes": {
+      "mp4": 171287,
+      "webm": 236839,
+      "webp": 642966,
+      "poster": 47348
+    }
+  },
+  "sparkle-eyes": {
+    "width": 480,
+    "height": 342,
+    "durationSeconds": 3.78,
+    "bytes": {
+      "mp4": 183559,
+      "webm": 254465,
+      "webp": 519058,
+      "poster": 34082
+    }
+  },
+  "shock": {
+    "width": 400,
+    "height": 300,
+    "durationSeconds": 7.0,
+    "bytes": {
+      "mp4": 253623,
+      "webm": 339152,
+      "webp": 647060,
+      "poster": 30128
+    }
+  },
+  "cheek-puff-move": {
+    "width": 480,
+    "height": 480,
+    "durationSeconds": 2.533,
+    "bytes": {
+      "mp4": 195184,
+      "webm": 292738,
+      "webp": 499006,
+      "poster": 37362
+    }
+  },
+  "smug": {
+    "width": 480,
+    "height": 360,
+    "durationSeconds": 3.133,
+    "bytes": {
+      "mp4": 174582,
+      "webm": 255281,
+      "webp": 684622,
+      "poster": 35010
+    }
+  },
+  "tsundere": {
+    "width": 420,
+    "height": 420,
+    "durationSeconds": 3.733,
+    "bytes": {
+      "mp4": 291982,
+      "webm": 449872,
+      "webp": 564750,
+      "poster": 38070
+    }
+  },
+  "wave": {
+    "width": 480,
+    "height": 480,
+    "durationSeconds": 0.15,
+    "bytes": {
+      "mp4": 18048,
+      "webm": 35272,
+      "webp": 66946,
+      "poster": 24862
+    }
+  },
+  "heart-skip": {
+    "width": 476,
+    "height": 406,
+    "durationSeconds": 0.87,
+    "bytes": {
+      "mp4": 58322,
+      "webm": 88889,
+      "webp": 188748,
+      "poster": 19642
+    }
+  },
+  "head-shake": {
+    "width": 480,
+    "height": 360,
+    "durationSeconds": 1.6,
+    "bytes": {
+      "mp4": 57805,
+      "webm": 92501,
+      "webp": 193808,
+      "poster": 20984
+    }
+  },
+  "shy": {
+    "width": 480,
+    "height": 312,
+    "durationSeconds": 1.6,
+    "bytes": {
+      "mp4": 69974,
+      "webm": 100896,
+      "webp": 257910,
+      "poster": 18790
+    }
+  },
+  "hehe": {
+    "width": 480,
+    "height": 278,
+    "durationSeconds": 1.8,
+    "bytes": {
+      "mp4": 48322,
+      "webm": 59361,
+      "webp": 207062,
+      "poster": 17290
+    }
+  },
+  "delighted": {
+    "width": 400,
+    "height": 300,
+    "durationSeconds": 3.19,
+    "bytes": {
+      "mp4": 60171,
+      "webm": 61195,
+      "webp": 112184,
+      "poster": 3298
+    }
+  },
+  "looking": {
+    "width": 428,
+    "height": 286,
+    "durationSeconds": 1.533,
+    "bytes": {
+      "mp4": 48492,
+      "webm": 82600,
+      "webp": 286360,
+      "poster": 20976
+    }
+  }
+}

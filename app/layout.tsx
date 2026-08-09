@@ -8,6 +8,7 @@ import { BootProvider } from "@/components/boot/BootProvider";
 import { Footer } from "@/components/site/Footer";
 import { ScrollController } from "@/components/scroll/ScrollController";
 import { Header } from "@/components/site/Header";
+import { SiteBackground } from "@/components/visual/SiteBackground";
 import { profile } from "@/lib/content";
 
 import "./globals.css";
@@ -137,6 +138,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <BootProvider>
             <AudioStarter />
             <ScrollController />
+            <SiteBackground />
             <Header />
             <div id="content" className="flex-1">
               {children}

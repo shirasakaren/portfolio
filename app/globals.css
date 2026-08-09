@@ -290,6 +290,161 @@ html[data-booting="true"] #boot-shield {
   animation: rise-in 0.8s var(--ease-petal) both;
 }
 
+/* ── marquee ──────────────────────────────────────────────────────────
+   Two identical tracks side by side, each sliding exactly its own width.
+   Entirely in CSS: it keeps gliding even while the main thread is busy,
+   which a JS ticker never manages. */
+
+@keyframes marquee-shift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-100%, 0, 0);
+  }
+}
+
+.marquee {
+  --marquee-mask: linear-gradient(
+    90deg,
+    transparent 0%,
+    #000 7%,
+    #000 93%,
+    transparent 100%
+  );
+  -webkit-mask-image: var(--marquee-mask);
+  mask-image: var(--marquee-mask);
+}
+
+.marquee-track {
+  animation: marquee-shift linear infinite;
+  will-change: transform;
+}
+
+.marquee[data-paused="true"] .marquee-track {
+  animation: none;
+}
+
+.marquee[data-hoverpause="true"]:hover .marquee-track {
+  animation-play-state: paused;
+}
+
+/* ── surfaces ─────────────────────────────────────────────────────────── */
+
+/* Frosted, but warmer than the usual grey glass — it sits over a pink field. */
+@utility glass {
+  background: color-mix(in srgb, var(--color-cream) 62%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-sakura-200) 70%, transparent);
+  backdrop-filter: blur(14px) saturate(1.25);
+  -webkit-backdrop-filter: blur(14px) saturate(1.25);
+}
+
+/* A dotted graph-paper wash for section backgrounds. */
+@utility dot-grid {
+  background-image: radial-gradient(
+    circle at 1px 1px,
+    color-mix(in srgb, var(--color-sakura-300) 55%, transparent) 1px,
+    transparent 0
+  );
+  background-size: 22px 22px;
+}
+
+/* The trading-card treatment: a slow prismatic sweep that only legendary
+   cards get, so rarity actually reads at a glance. */
+@keyframes foil-drift {
+  0% {
+    background-position:
+      0% 50%,
+      50% 50%;
+  }
+  100% {
+    background-position:
+      200% 50%,
+      50% 50%;
+  }
+}
+
+@utility holo-foil {
+  background-image:
+    linear-gradient(
+      115deg,
+      transparent 20%,
+      rgba(255, 255, 255, 0.5) 32%,
+      rgba(255, 143, 199, 0.42) 40%,
+      rgba(199, 125, 255, 0.42) 48%,
+      rgba(247, 194, 92, 0.35) 56%,
+      transparent 70%
+    ),
+    radial-gradient(
+      120% 90% at 50% 0%,
+      rgba(255, 255, 255, 0.35),
+      transparent 60%
+    );
+  background-size:
+    200% 100%,
+    100% 100%;
+  animation: foil-drift 7s linear infinite;
+  mix-blend-mode: soft-light;
+}
+
+/* Ring of light around the rarest cards. */
+@utility tier-glow {
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--color-sakura-300) 80%, transparent),
+    0 18px 50px -22px rgba(214, 51, 108, 0.55),
+    0 0 60px -30px rgba(199, 125, 255, 0.9);
+}
+
+@keyframes shimmer {
+  from {
+    background-position: -180% 0;
+  }
+  to {
+    background-position: 180% 0;
+  }
+}
+
+@keyframes wiggle {
+  0%,
+  100% {
+    transform: rotate(-2.5deg);
+  }
+  50% {
+    transform: rotate(2.5deg);
+  }
+}
+
+@keyframes spin-slow {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-wiggle {
+  animation: wiggle 2.8s ease-in-out infinite;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 18s linear infinite;
+}
+
+/* Sparkles — decorative only, so they are pure CSS and cost nothing. */
+@keyframes sparkle-pop {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.3) rotate(0deg);
+  }
+  45% {
+    opacity: 1;
+    transform: scale(1) rotate(90deg);
+  }
+}
+
+.sparkle {
+  animation: sparkle-pop 3.2s var(--ease-drift) infinite;
+}
+
 /* ── volume slider ────────────────────────────────────────────────── */
 
 /* `accent-color` alone leaves a dark unfilled track, which reads badly on a
