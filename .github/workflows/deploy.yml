@@ -1,0 +1,73 @@
+name: Deploy
+
+# Production on every push to main; a preview URL for every other branch, which
+# is what makes a broken change visible before it reaches ren.shirasaka.work.
+#
+# Deliberately no `pull_request` trigger. Secrets are not exposed to fork PRs,
+# so the deploy step would fail there anyway, and for branches in this repo the
+# `push` trigger already covers it — adding both would deploy twice.
+on:
+  push:
+    branches: ["**"]
+  workflow_dispatch:
+
+# One deploy at a time per branch. A second push while the first is still
+# uploading would otherwise race, and Pages would serve whichever finished last
+# rather than whichever was newest.
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  deployments: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      # `next build` writes the static export to ./out. The contact form lives
+      # in ./functions and is picked up from the repository root, not from the
+      # asset directory — so this must run with the root as the working dir.
+      - name: Build
+        run: npm run build
+
+      # A branch name is untrusted input: it reaches us from whoever pushed, and
+      # it is about to be interpolated into a shell command. Scrub it to the
+      # characters Cloudflare accepts in a branch, through an environment
+      # variable rather than a template expansion, so nothing can break out.
+      - name: Resolve deploy branch
+        id: branch
+        env:
+          RAW_REF: ${{ github.ref_name }}
+        run: |
+          clean=$(printf '%s' "$RAW_REF" | tr -cd 'A-Za-z0-9._/-' | cut -c1-64)
+          [ -n "$clean" ] || clean=main
+          echo "name=$clean" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: >-
+            pages deploy out
+            --project-name=ren-portfolio
+            --branch=${{ steps.branch.outputs.name }}
