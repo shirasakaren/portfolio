@@ -242,6 +242,9 @@ export function DandelionTransition({
       }
       if (t >= TOTAL_DUR) {
         finished = true;
+        // Blank the layer while it is still in the tree, so the compositor has
+        // the page beneath fully rasterised before the element goes away.
+        canvas.style.opacity = "0";
         cb.current.onComplete();
         return;
       }

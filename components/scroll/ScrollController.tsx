@@ -71,6 +71,46 @@ export function ScrollController() {
   const { scrollLocked } = useBoot();
   const reduced = usePrefersReducedMotion();
 
+  /**
+   * Hold the page at the top during the intro.
+   *
+   * Deliberately *not* `overflow: hidden` — clipping the body collapses the
+   * document to a single viewport, so the scrollbar disappears for the whole
+   * intro and then reappears at the end, shifting the entire layout sideways
+   * at the worst possible moment. Pinning the position instead leaves the
+   * document its real height, so the scrollbar is there from the first paint
+   * and nothing ever moves.
+   *
+   * Runs regardless of `prefers-reduced-motion`, which the smooth-scroll effect
+   * below opts out of.
+   */
+  useEffect(() => {
+    if (!scrollLocked) return;
+
+    const pin = () => {
+      if (window.scrollY !== 0) {
+        window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      }
+    };
+    const block = (e: Event) => e.preventDefault();
+    const onKey = (e: KeyboardEvent) => {
+      if (SCROLL_KEYS.has(e.key) && !isTypingTarget(e.target)) e.preventDefault();
+    };
+
+    pin();
+    window.addEventListener("scroll", pin, { passive: true });
+    window.addEventListener("wheel", block, { passive: false });
+    window.addEventListener("touchmove", block, { passive: false });
+    window.addEventListener("keydown", onKey);
+
+    return () => {
+      window.removeEventListener("scroll", pin);
+      window.removeEventListener("wheel", block);
+      window.removeEventListener("touchmove", block);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [scrollLocked]);
+
   useEffect(() => {
     // Reduced motion gets the browser's own scrolling, untouched.
     if (reduced) return;

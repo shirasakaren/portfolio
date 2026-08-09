@@ -67,6 +67,8 @@ const LOADER_FADE_MS = 620;
 const SCROLL_RELEASE_DELAY_MS = 1400;
 /** Nothing may hold the page hostage longer than this, whatever goes wrong. */
 const SCROLL_RELEASE_CEILING_MS = 15_000;
+/** Grace period before the finished transition canvas leaves the DOM. */
+const UNMOUNT_DELAY_MS = 600;
 
 export function BootProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -190,7 +192,11 @@ export function BootProvider({ children }: { children: React.ReactNode }) {
   const onComplete = useCallback(() => {
     clearShield();
     setStage((s) => (s === "settled" ? s : "settled"));
-    setShowTransition(false);
+    // Tearing a full-viewport composited layer out of the tree costs one frame
+    // of un-rasterised page underneath — a white blink. The canvas hides itself
+    // first and is only unmounted well after, once nothing depends on the
+    // timing.
+    setTimeout(() => setShowTransition(false), UNMOUNT_DELAY_MS);
   }, [clearShield]);
 
   const value = useMemo<BootValue>(

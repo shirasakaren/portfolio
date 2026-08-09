@@ -145,12 +145,11 @@ html[data-booting="true"] body {
   background-color: #ffffff;
 }
 
-/* Scroll stays locked past the shield: through the dandelions, the hello, and
-   the name settling. Released separately so the page can be *visible* well
-   before it is scrollable. */
-html[data-locked="true"] body {
-  overflow: hidden;
-}
+/* Scroll is locked by holding the position (see ScrollController), never by
+   `overflow: hidden`. Clipping the body would collapse the document to one
+   viewport, so the scrollbar would vanish for the whole intro and then appear
+   at the end — shifting the entire page sideways just as the name settles.
+   The layout stays exactly as it will be, from the first paint onward. */
 
 #boot-shield {
   display: none;

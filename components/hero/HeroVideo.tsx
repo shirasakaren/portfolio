@@ -35,6 +35,14 @@ const RIGHT_WASH =
   " rgba(255,250,252,0.05) 55%," +
   " rgba(255,250,252,0) 68%)";
 
+/**
+ * Tier breakpoints are deliberately higher than the encode ladder's defaults.
+ * AV1 has no hardware decoder on most Macs before M3 or on older PCs, so a
+ * 2560×1440 stream is decoded in software — continuously, for the whole visit.
+ * For a background illustration sitting behind text that is a bad trade, so a
+ * typical 1440px-wide window now gets the 1080p tier and only genuinely large
+ * displays pull the heavy ones.
+ */
 const AV1_HIGH = 'video/mp4; codecs="av01.0.12M.10.0.110.01.01.01.0"';
 const AV1_MID = 'video/mp4; codecs="av01.0.08M.10.0.110.01.01.01.0"';
 const AV1_LOW = 'video/mp4; codecs="av01.0.05M.10.0.110.01.01.01.0"';
@@ -65,7 +73,12 @@ export function HeroVideo({ play }: { play: boolean }) {
     let onScreen = true;
 
     const ensurePlaying = () => {
-      if (!alive || !onScreen || document.hidden) return;
+      if (!alive) return;
+      if (!onScreen || document.hidden) {
+        // Nothing to look at: stop decoding rather than merely not resuming.
+        if (!v.paused) v.pause();
+        return;
+      }
       if (v.paused || v.ended) {
         void v.play().catch(() => {
           /* muted inline playback is allowed everywhere we support */
@@ -75,10 +88,18 @@ export function HeroVideo({ play }: { play: boolean }) {
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        onScreen = entry.isIntersecting;
-        if (onScreen) ensurePlaying();
+        // Chrome reports isIntersecting = true with ratio 0 when the element's
+        // edge exactly touches the viewport's — which is precisely where the
+        // hero snap parks. The ratio is the honest signal.
+        onScreen = entry.isIntersecting && entry.intersectionRatio > 0;
+        ensurePlaying();
       },
-      { threshold: 0 },
+      // The 1px inset matters: parked at the snap seam the hero's bottom edge
+      // sits exactly on the viewport's top, which Chrome still calls
+      // "intersecting" — so with a bare 0 threshold nothing is ever crossed and
+      // the callback never fires at all. Shrinking the root makes that case
+      // decisively outside.
+      { threshold: [0, 0.01], rootMargin: "-1px 0px" },
     );
     observer.observe(v);
 
@@ -123,23 +144,23 @@ export function HeroVideo({ play }: { play: boolean }) {
         <source
           src="/hero-video/hero-2160p.av1.mp4"
           type={AV1_HIGH}
-          media="(min-width: 2000px)"
+          media="(min-width: 2400px)"
         />
         <source
           src="/hero-video/hero-1440p.av1.mp4"
           type={AV1_HIGH}
-          media="(min-width: 1280px)"
+          media="(min-width: 1700px)"
         />
         <source
           src="/hero-video/hero-1080p.av1.mp4"
           type={AV1_MID}
-          media="(min-width: 760px)"
+          media="(min-width: 900px)"
         />
         <source src="/hero-video/hero-720p.av1.mp4" type={AV1_LOW} />
         <source
           src="/hero-video/hero-1080p.h264.mp4"
           type={H264}
-          media="(min-width: 760px)"
+          media="(min-width: 900px)"
         />
         <source src="/hero-video/hero-720p.h264.mp4" type={H264} />
       </video>
