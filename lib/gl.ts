@@ -10,7 +10,7 @@ export type GL = WebGL2RenderingContext;
 
 export function getGL(canvas: HTMLCanvasElement): GL | null {
   try {
-    return canvas.getContext("webgl2", {
+    const gl = canvas.getContext("webgl2", {
       alpha: true,
       antialias: false,
       depth: false,
@@ -20,6 +20,12 @@ export function getGL(canvas: HTMLCanvasElement): GL | null {
       powerPreference: "high-performance",
       desynchronized: false,
     }) as GL | null;
+
+    // `getContext` hands back the *existing* context for a canvas. If a previous
+    // mount lost it, every compile from here would fail with an empty info log,
+    // so treat it as no context at all and let the caller fall back.
+    if (gl?.isContextLost()) return null;
+    return gl;
   } catch {
     return null;
   }
@@ -30,7 +36,9 @@ function compile(gl: GL, type: number, src: string): WebGLShader {
   gl.shaderSource(sh, src);
   gl.compileShader(sh);
   if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
-    const log = gl.getShaderInfoLog(sh) ?? "unknown shader error";
+    const log =
+      gl.getShaderInfoLog(sh) ||
+      (gl.isContextLost() ? "context lost" : "no info log");
     gl.deleteShader(sh);
     throw new Error(
       `[gl] ${type === gl.VERTEX_SHADER ? "vertex" : "fragment"} shader: ${log}`,

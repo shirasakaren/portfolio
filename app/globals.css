@@ -226,6 +226,61 @@ html[data-booting="true"] #boot-shield {
   color: transparent;
 }
 
+/* Idle shine.
+ *
+ * The base layer is byte-for-byte `text-gradient`, so the reveal shader's final
+ * frame still hands over to a pixel match. A highlight band rides above it,
+ * parked past the right edge until the animation starts — and the animation
+ * only starts once ShaderText marks the element settled, so the sweep can never
+ * appear mid-reveal. */
+@utility text-gradient-shine {
+  background-image:
+    linear-gradient(
+      100deg,
+      transparent 45.5%,
+      rgba(255, 255, 255, 0.32) 48%,
+      rgba(255, 252, 238, 0.88) 50%,
+      rgba(255, 255, 255, 0.32) 52%,
+      transparent 54.5%
+    ),
+    linear-gradient(
+      100deg,
+      var(--color-sakura-700) 0%,
+      var(--color-sakura-600) 34%,
+      var(--color-sakura-500) 62%,
+      var(--color-lilac-400) 100%
+    );
+  background-size:
+    240% 100%,
+    100% 100%;
+  background-position:
+    0% 0,
+    0 0;
+  background-repeat: no-repeat;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+/* Unlayered, so it outranks the utility above without !important. */
+.text-gradient-shine.shader-settled {
+  animation: text-shine 6.5s cubic-bezier(0.45, 0.05, 0.35, 1) 1s infinite;
+}
+
+@keyframes text-shine {
+  0% {
+    background-position:
+      100% 0,
+      0 0;
+  }
+  18%,
+  100% {
+    background-position:
+      0% 0,
+      0 0;
+  }
+}
+
 /* Legibility over the hero video without laying a scrim on top of it:
    the halo is attached to the glyphs, so the artwork stays untouched. */
 @utility hero-halo {

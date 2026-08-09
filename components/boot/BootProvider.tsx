@@ -81,6 +81,20 @@ export function BootProvider({ children }: { children: React.ReactNode }) {
   const [heroIntroPending, setHeroIntroPending] = useState(isHome);
   const shieldCleared = useRef(false);
   const scrollReleased = useRef(false);
+  /**
+   * The intro belongs to the initial page load, not to arriving at `/` by
+   * client-side navigation. This provider lives in the layout and never
+   * remounts, so a ref initialised on the first render captures which page the
+   * document actually opened on.
+   */
+  const openedOnHome = useRef(isHome);
+  /**
+   * Set only once the sequence has actually got as far as handing over to the
+   * dandelions. Tracking *completion* rather than *start* is what makes this
+   * survive StrictMode, which mounts, cleans up, and mounts again — the first
+   * pass is cancelled before it finishes, so the second is free to run.
+   */
+  const bootDone = useRef(false);
 
   /** Hand the page back to the user: unlock scroll, drop the white shield. */
   const clearShield = useCallback(() => {
@@ -111,7 +125,10 @@ export function BootProvider({ children }: { children: React.ReactNode }) {
   }, [isHome, releaseScroll]);
 
   useEffect(() => {
-    if (!isHome) {
+    // Navigating *to* `/` mid-session must not replay the boot — re-running it
+    // would remount the dandelion transition and flash its opaque white veil
+    // over a page the visitor has already seen.
+    if (!isHome || !openedOnHome.current || bootDone.current) {
       clearShield();
       releaseScroll();
       return;
@@ -155,6 +172,7 @@ export function BootProvider({ children }: { children: React.ReactNode }) {
       await new Promise((r) => setTimeout(r, LOADER_FADE_MS));
       if (cancelled) return;
 
+      bootDone.current = true;
       setStage("dissolving");
       setShowTransition(true);
     })();

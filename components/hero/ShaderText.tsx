@@ -101,6 +101,7 @@ export function ShaderText({
       if (canvasRef.current) canvasRef.current.style.opacity = "0";
       if (haloRef.current) haloRef.current.style.opacity = "1";
       textEl.classList.remove("shader-masked");
+      textEl.classList.add("shader-settled");
       textEl.style.opacity = "1";
       onDoneRef.current?.();
       setTimeout(() => {
@@ -113,6 +114,7 @@ export function ShaderText({
 
     const plainFade = () => {
       textEl.classList.remove("shader-masked");
+      textEl.classList.add("shader-settled");
       for (const el of [textEl, haloRef.current]) {
         if (!el) continue;
         el.style.transition = "opacity 700ms cubic-bezier(0.22, 1, 0.36, 1)";
@@ -261,7 +263,11 @@ export function ShaderText({
         gl.deleteTexture(tex);
         gl.deleteVertexArray(vao);
         gl.deleteProgram(prog);
-        gl.getExtension("WEBGL_lose_context")?.loseContext();
+        // See DandelionTransition: losing a still-mounted canvas's context
+        // breaks the very next mount in StrictMode.
+        if (!canvas.isConnected) {
+          gl.getExtension("WEBGL_lose_context")?.loseContext();
+        }
       };
     }
 

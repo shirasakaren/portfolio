@@ -117,7 +117,6 @@ export function DandelionTransition({
     })();
 
     if (!programs) {
-      gl.getExtension("WEBGL_lose_context")?.loseContext();
       bailToFallback();
       return;
     }
@@ -263,7 +262,12 @@ export function DandelionTransition({
       gl.deleteBuffer(idBuf);
       gl.deleteProgram(veilProg);
       gl.deleteProgram(seedProg);
-      gl.getExtension("WEBGL_lose_context")?.loseContext();
+      // Only safe once the canvas is genuinely gone: React re-runs effects on
+      // the *same* element in StrictMode, and getContext() would then hand back
+      // the context we just destroyed.
+      if (!canvas.isConnected) {
+        gl.getExtension("WEBGL_lose_context")?.loseContext();
+      }
     };
   }, [reduced]);
 
