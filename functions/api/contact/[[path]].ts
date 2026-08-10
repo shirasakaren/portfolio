@@ -175,7 +175,7 @@ async function handleContact(request: Request, env: Env): Promise<Response> {
     if (!workerRes.ok || !workerBody.ok) {
       console.error("[contact] worker returned error", workerBody.error);
       return errResp(
-        workerBody.error ?? "Couldn't deliver that. Please email ren@shirasaka.work directly.",
+        "Couldn't deliver that. Please email ren@shirasaka.work directly.",
         502,
       );
     }
