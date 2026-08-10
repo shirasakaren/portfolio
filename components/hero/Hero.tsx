@@ -121,23 +121,35 @@ export function Hero() {
 }
 
 function ScrollCue({ show }: { show: boolean }) {
+  const scrollDown = () => {
+    const hero = document.getElementById("hero");
+    if (hero) {
+      window.scrollTo({ top: hero.offsetHeight, behavior: "smooth" });
+    }
+  };
+
   return (
     <div
-      aria-hidden="true"
-      className="pointer-events-none absolute inset-x-0 bottom-7 flex justify-center"
+      className="absolute inset-x-0 bottom-8 flex justify-center"
       style={{
         opacity: show ? 1 : 0,
+        pointerEvents: show ? "auto" : "none",
         transition: "opacity 1s var(--ease-petal) 400ms",
       }}
     >
-      <div className="animate-bob flex flex-col items-center gap-1.5">
-        <span className="hero-halo-sm font-display text-xs font-bold tracking-[0.3em] text-sakura-800 uppercase">
+      <button
+        type="button"
+        onClick={scrollDown}
+        aria-label="Scroll to content"
+        className="animate-bob flex cursor-pointer flex-col items-center gap-2 rounded-xl px-4 py-2 transition-[transform,color] duration-300 hover:scale-110 hover:text-sakura-600"
+      >
+        <span className="hero-halo-sm font-display text-sm font-bold tracking-[0.28em] text-sakura-800 uppercase">
           scroll
         </span>
-        <span className="text-lg text-sakura-700 drop-shadow-[0_0_10px_rgba(255,255,255,0.95)]">
+        <span className="text-2xl text-sakura-700 drop-shadow-[0_0_12px_rgba(255,255,255,0.95)]">
           ↓
         </span>
-      </div>
+      </button>
     </div>
   );
 }
