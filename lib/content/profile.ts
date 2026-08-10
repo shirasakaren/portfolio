@@ -25,7 +25,7 @@ export const profile = {
   github: "https://github.com/shirasakaren",
   githubHandle: "@shirasakaren",
   discord: "https://discord.com/users/1277846847179853857",
-  discordHandle: "@renshirasaka",
+  discordHandle: "@shirasakaren",
   website: "https://ren.shirasaka.work",
   greetingJa: "よろしくおねがいします〜",
   /** Where the career clock starts — used to derive "N years" on the fly. */

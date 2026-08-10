@@ -54,7 +54,7 @@ export default function ContactPage() {
       <PageShell>
         <PageHeader
           kicker="come say hi"
-          title="Let's talk infrastructure"
+          title="Let's talk business"
           titleJa="よろしくおねがいします〜"
           lead="The form goes to my inbox. Discord gets the fastest reply. Either way, you're not talking to a bot."
           aside={
@@ -62,7 +62,7 @@ export default function ContactPage() {
               name="hehe"
               eager
               size="w-36 sm:w-44"
-              caption="hehe~ go on, copy it"
+              caption="hehe~ go on, fill it"
             />
           }
         />
@@ -73,13 +73,12 @@ export default function ContactPage() {
             <Card className="relative overflow-hidden">
               <Sparkles count={7} className="opacity-35" />
               <div className="relative">
-                <Kicker>the form</Kicker>
+                <Kicker>fill this</Kicker>
                 <h2 className="text-gradient mt-1 font-display text-2xl font-extrabold">
                   Tell me what you need.
                 </h2>
                 <p className="mt-2 mb-9 text-sm text-ink-500">
-                  Name, email, the situation — and a file if it helps. Goes
-                  straight to my inbox. No CRM, no funnel, no autoresponder.
+                  This goes straight to my inbox, reply might take 2 business days.
                 </p>
                 <ContactForm />
               </div>
@@ -152,14 +151,13 @@ export default function ContactPage() {
               <div className="rounded-blob relative overflow-hidden border border-sakura-200/70 bg-linear-to-br from-sakura-100/80 to-lilac-200/50 p-7 text-center">
                 <Sparkles count={6} className="opacity-45" />
                 <div className="relative flex flex-col items-center">
-                  <ReactionClip
+                  {/* <ReactionClip
                     name="sparkleEyes"
                     size="w-28"
                     rounded="rounded-[1.3rem]"
-                  />
+                  /> */}
                   <p className="mt-4 max-w-[18ch] text-sm font-semibold text-ink-700">
-                    Discord is the fastest way to reach me — I&rsquo;m usually
-                    online during JST working hours.
+                    Discord is the fastest way to reach me.
                   </p>
                   <Magnetic className="mt-5">
                     <a

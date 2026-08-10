@@ -21,6 +21,8 @@ type Props = {
   className?: string;
   /** Fires once the animation is parsed and in the DOM. */
   onReady?: (anim: AnimationItem) => void;
+  /** Fires when a non-looping animation reaches its final frame. */
+  onComplete?: () => void;
   onError?: (err: unknown) => void;
   /** Omit for decorative animations so screen readers skip them. */
   label?: string;
@@ -35,6 +37,7 @@ export function Lottie({
   className,
   onReady,
   onError,
+  onComplete,
   label,
 }: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
@@ -44,9 +47,11 @@ export function Lottie({
   // holds the latest value by the time the animation resolves.
   const onReadyRef = useRef(onReady);
   const onErrorRef = useRef(onError);
+  const onCompleteRef = useRef(onComplete);
   useEffect(() => {
     onReadyRef.current = onReady;
     onErrorRef.current = onError;
+    onCompleteRef.current = onComplete;
   });
 
   useEffect(() => {
@@ -84,6 +89,9 @@ export function Lottie({
         }
 
         onReadyRef.current?.(anim);
+        if (!loop) {
+          anim.addEventListener("complete", () => onCompleteRef.current?.());
+        }
       } catch (err) {
         if (!cancelled) onErrorRef.current?.(err);
       }
