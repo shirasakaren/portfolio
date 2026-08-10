@@ -2,7 +2,6 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import { type DragEvent, useRef, useState } from "react";
-
 import { Lottie } from "@/components/lottie/Lottie";
 import { EASE } from "@/components/motion";
 
@@ -19,23 +18,23 @@ export function ContactForm() {
   const [filePreview, setFilePreview] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
   const [email, setEmail] = useState("");
-  const [emailTouched, setEmailTouched] = useState(false);
+  const [emailBlurred, setEmailBlurred] = useState(false);
   const [popupOpen, setPopupOpen] = useState(false);
   const [popupStage, setPopupStage] = useState<"sending" | "success">("sending");
+  const [sendingMsg, setSendingMsg] = useState(0);
   const formRef = useRef<HTMLFormElement>(null);
   const dragCount = useRef(0);
+  const sendingTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Derived, not set in an effect — the lint rule is right.
-  const emailBlank = !email;
+  // Only show the error after the user has left the field.
   const emailValid = EMAIL_RE.test(email);
   const emailError =
-    emailTouched && !emailBlank && !emailValid
+    emailBlurred && email && !emailValid
       ? "That doesn't look like an email address."
       : null;
 
-  function onEmailChange(value: string) {
-    setEmail(value);
-    if (!emailTouched) setEmailTouched(true);
+  function onEmailBlur() {
+    setEmailBlurred(true);
   }
 
   // ── file handling ──────────────────────────────────────────────────
@@ -101,16 +100,25 @@ export function ContactForm() {
     }
 
     const emailVal = (fd.get("email") as string).trim();
-    onEmailChange(emailVal);
+    setEmail(emailVal);
+    setEmailBlurred(true);
     if (!EMAIL_RE.test(emailVal)) return;
 
-    // Open the popup
+    // Reset and open the popup
+    setSendingMsg(0);
     setPopupOpen(true);
     setPopupStage("sending");
-
     setStatus(file ? "uploading" : "sending");
     setError(null);
     setProgress(0);
+
+    // Fake progress messages so the user knows nothing is stuck.
+    const messages = file
+      ? ["Verifying the email…", "Uploading your file…", "Sending to server…", "Almost there…"]
+      : ["Verifying the email…", "Sending to server…", "Almost there…"];
+    sendingTimer.current = setInterval(() => {
+      setSendingMsg((n) => Math.min(n + 1, messages.length - 1));
+    }, 1800);
 
     if (file) fd.set("attachment", file);
 
@@ -150,14 +158,17 @@ export function ContactForm() {
       });
 
       // Switch popup to success animation
+      if (sendingTimer.current) { clearInterval(sendingTimer.current); sendingTimer.current = null; }
       setPopupStage("success");
       setStatus("sent");
       form.reset();
       setEmail("");
+      setEmailBlurred(false);
       setFile(null);
       setFilePreview(null);
       setProgress(0);
     } catch (err) {
+      if (sendingTimer.current) { clearInterval(sendingTimer.current); sendingTimer.current = null; }
       setPopupOpen(false);
       setStatus("error");
       setError(
@@ -232,25 +243,17 @@ export function ContactForm() {
               maxLength={200}
               placeholder="you@example.com"
               value={email}
-              onChange={(e) => onEmailChange(e.target.value)}
+              onChange={(e) => setEmail(e.target.value)}
+              onBlur={onEmailBlur}
               className={`mt-2 w-full rounded-[1.2rem] border px-4 py-3.5 text-[0.95rem] text-ink-900 placeholder:text-ink-300 focus:outline-none transition-colors ${
                 emailError
                   ? "border-red-400 bg-red-50 focus:border-red-500"
                   : "border-sakura-200 bg-white/85 focus:border-sakura-400"
-              } ${
-                email && !emailError
-                  ? "border-green-400 bg-green-50"
-                  : ""
               }`}
             />
             {emailError && (
               <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-red-500">
                 <span aria-hidden>⚠</span> {emailError}
-              </p>
-            )}
-            {email && emailValid && (
-              <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-green-600">
-                <span aria-hidden>✓</span> looks valid
               </p>
             )}
           </div>
@@ -336,6 +339,8 @@ export function ContactForm() {
       <SubmissionPopup
         open={popupOpen}
         stage={popupStage}
+        sendingMsgIndex={sendingMsg}
+        hasFile={!!file}
         onSuccessComplete={onSuccessComplete}
       />
     </>
@@ -344,15 +349,30 @@ export function ContactForm() {
 
 // ── submission popup ────────────────────────────────────────────────────
 
+const SENDING_MESSAGES = [
+  "Verifying the email…",
+  "Uploading your file…",
+  "Sending to server…",
+  "Almost there…",
+];
+
 function SubmissionPopup({
   open,
   stage,
+  sendingMsgIndex,
+  hasFile,
   onSuccessComplete,
 }: {
   open: boolean;
   stage: "sending" | "success";
+  sendingMsgIndex: number;
+  hasFile: boolean;
   onSuccessComplete: () => void;
 }) {
+  const msgs = hasFile ? SENDING_MESSAGES : SENDING_MESSAGES.filter((_, i) => i !== 1);
+  const msg = msgs[Math.min(sendingMsgIndex, msgs.length - 1)] ?? msgs[msgs.length - 1];
+  const pct = Math.round(((sendingMsgIndex + 1) / msgs.length) * 100);
+
   return (
     <AnimatePresence>
       {open && (
@@ -363,7 +383,6 @@ function SubmissionPopup({
           exit={{ opacity: 0 }}
           transition={{ duration: 0.35, ease: EASE }}
         >
-          {/* backdrop */}
           <motion.div
             className="absolute inset-0 bg-ink-900/70 backdrop-blur-sm"
             initial={{ opacity: 0 }}
@@ -371,7 +390,6 @@ function SubmissionPopup({
             exit={{ opacity: 0 }}
           />
 
-          {/* card */}
           <motion.div
             className="glass rounded-blob relative flex flex-col items-center gap-5 px-10 py-12 shadow-[0_30px_80px_-30px_rgba(214,51,108,0.8)] sm:px-14 sm:py-14"
             initial={{ scale: 0.92, y: 16, opacity: 0 }}
@@ -389,11 +407,18 @@ function SubmissionPopup({
                   label="Sending your message"
                 />
                 <p className="text-gradient font-display text-xl font-extrabold">
-                  sending your message…
+                  {msg}
                 </p>
-                <p className="-mt-2 text-sm text-ink-500">
-                  it&rsquo;ll just take a moment
-                </p>
+                {/* Progress bar */}
+                <div className="w-full max-w-[14rem]">
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-sakura-200/70">
+                    <motion.div
+                      className="h-full rounded-full bg-linear-to-r from-sakura-600 to-lilac-400"
+                      animate={{ width: `${pct}%` }}
+                      transition={{ duration: 0.6, ease: EASE }}
+                    />
+                  </div>
+                </div>
               </>
             ) : (
               <AnimatePresence>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { ContactForm } from "@/components/contact/ContactForm";
+import { JstClock } from "@/components/contact/JstClock";
 import { Magnetic, Reveal, Stagger, StaggerItem } from "@/components/motion";
 import { PageTransition } from "@/components/site/PageTransition";
 import { Card, Kicker, PageHeader, PageShell, Sparkles } from "@/components/ui";
@@ -35,14 +36,6 @@ const DIRECT = [
     emoji: "🐙",
     value: profile.githubHandle,
     href: profile.github,
-    mono: false,
-    copy: false,
-  },
-  {
-    label: "Hours",
-    emoji: "🕘",
-    value: `${profile.timezone} · ${profile.location}`,
-    href: null,
     mono: false,
     copy: false,
   },
@@ -98,8 +91,7 @@ export default function ContactPage() {
                         {item.label}
                       </p>
                       <div className="mt-1.5 flex flex-wrap items-center gap-2">
-                        {item.href ? (
-                          <a
+                        <a
                             href={item.href}
                             {...(item.href.startsWith("http")
                               ? { target: "_blank", rel: "me noreferrer" }
@@ -110,13 +102,22 @@ export default function ContactPage() {
                           >
                             {item.value}
                           </a>
-                        ) : (
-                          <span className="text-ink-700">{item.value}</span>
-                        )}
                         {item.copy && <CopyButton value={item.value} />}
                       </div>
                     </StaggerItem>
                   ))}
+                  <StaggerItem as="li">
+                    <p className="flex items-center gap-2 text-xs font-bold tracking-[0.2em] text-ink-300 uppercase">
+                      <span aria-hidden>🕘</span>
+                      Hours
+                    </p>
+                    <div className="mt-1.5">
+                      <JstClock className="text-sm font-medium text-sakura-700" />
+                      <p className="text-xs text-ink-500">
+                        {profile.location}
+                      </p>
+                    </div>
+                  </StaggerItem>
                 </Stagger>
               </Card>
             </Reveal>
