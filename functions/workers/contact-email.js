@@ -1,8 +1,8 @@
 /**
- * Thin email relay for the Pages contact form.
+ * Email relay for the Pages contact form.
  *
- * The Pages Function handles multipart parsing and R2 upload. This Worker
- * handles only email delivery, because Pages has no send_email binding.
+ * Uses the Cloudflare send_email Workers binding, which requires Email Routing
+ * enabled on the zone and the destination address verified.
  *
  * Called as a Service Binding from the Pages Function via
  * env.EMAIL_WORKER.fetch(request).
@@ -20,41 +20,48 @@ export default {
     try {
       body = await request.json();
     } catch {
-      return new Response(JSON.stringify({ error: "Expected JSON" }), {
-        status: 400,
-        headers: { "content-type": "application/json" },
-      });
+      return json({ error: "Expected JSON" }, 400);
     }
 
-    const { from, to, rawMime } = body;
-    if (!from || !to || !rawMime) {
-      return new Response(
-        JSON.stringify({ error: "Missing from, to, or rawMime" }),
-        { status: 400, headers: { "content-type": "application/json" } },
-      );
+    const { from, to, subject, text } = body;
+    if (!from || !to || !subject || !text) {
+      return json({ error: "Missing from, to, subject, or text" }, 400);
     }
 
     if (!env.SEND_EMAIL) {
-      return new Response(
-        JSON.stringify({
-          error: "Email binding not configured on this Worker.",
-        }),
-        { status: 503, headers: { "content-type": "application/json" } },
-      );
+      return json({ error: "send_email binding not configured" }, 503);
     }
 
+    // Build a complete RFC 5322 message so it renders in any email client.
+    const raw = [
+      `From: Ren's Portfolio <${from}>`,
+      `To: <${to}>`,
+      `Subject: ${subject}`,
+      `Date: ${new Date().toUTCString()}`,
+      `Message-ID: <${crypto.randomUUID()}@shirasaka.work>`,
+      "MIME-Version: 1.0",
+      'Content-Type: text/plain; charset="utf-8"',
+      "Content-Transfer-Encoding: base64",
+      "",
+      btoa(text)
+        .match(/.{1,76}/g)
+        ?.join("\n"),
+    ].join("\r\n");
+
     try {
-      await env.SEND_EMAIL.send(new EmailMessage(from, to, rawMime));
-      return new Response(JSON.stringify({ ok: true }), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      });
+      await env.SEND_EMAIL.send(new EmailMessage(from, to, raw));
+      return json({ ok: true }, 200);
     } catch (err) {
-      console.error("[email-worker] send failed:", String(err?.message ?? err));
-      return new Response(
-        JSON.stringify({ error: String(err?.message ?? err) }),
-        { status: 502, headers: { "content-type": "application/json" } },
-      );
+      const msg = String(err?.message ?? err);
+      console.error("[email-worker] send failed:", msg);
+      return json({ error: msg }, 502);
     }
   },
 };
+
+function json(data, status) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { "content-type": "application/json" },
+  });
+}

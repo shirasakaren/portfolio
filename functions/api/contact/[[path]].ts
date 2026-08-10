@@ -153,21 +153,17 @@ async function handleContact(request: Request, env: Env): Promise<Response> {
     .filter(Boolean)
     .join("\n");
 
-  const raw = buildMime({
-    from,
-    to,
-    replyTo: headerSafe(email),
-    fromName: `${headerSafe(name)} (via shirasaka.work)`,
-    subject: `Portfolio — ${headerSafe(name)}`,
-    body: emailBody,
-  });
-
   try {
     const workerRes = await env.EMAIL_WORKER.fetch(
       new Request("https://email-worker.internal/", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ from, to, rawMime: raw }),
+        body: JSON.stringify({
+          from,
+          to,
+          subject: `Portfolio — ${headerSafe(name)}`,
+          text: emailBody,
+        }),
       }),
     );
 
@@ -190,51 +186,8 @@ async function handleContact(request: Request, env: Env): Promise<Response> {
   }
 }
 
-// ── MIME construction (RFC 5322 + RFC 2047) ────────────────────────────
-
 function headerSafe(value: string): string {
   return value.replace(/[\r\n]+/g, " ").trim();
-}
-
-function encodeHeaderWord(value: string): string {
-  if (/^[\x20-\x7E]*$/.test(value)) return value;
-  const bytes = new TextEncoder().encode(value);
-  let binary = "";
-  for (const b of bytes) binary += String.fromCharCode(b);
-  return `=?UTF-8?B?${btoa(binary)}?=`;
-}
-
-function base64Utf8(value: string): string {
-  const bytes = new TextEncoder().encode(value);
-  let binary = "";
-  for (const b of bytes) binary += String.fromCharCode(b);
-  return btoa(binary);
-}
-
-function wrap76(value: string): string {
-  return (value.match(/.{1,76}/g) ?? []).join("\r\n");
-}
-
-function buildMime(opts: {
-  from: string;
-  to: string;
-  replyTo: string;
-  fromName: string;
-  subject: string;
-  body: string;
-}): string {
-  const headers = [
-    `From: ${encodeHeaderWord(opts.fromName)} <${opts.from}>`,
-    `To: <${opts.to}>`,
-    `Reply-To: <${opts.replyTo}>`,
-    `Subject: ${encodeHeaderWord(opts.subject)}`,
-    `Date: ${new Date().toUTCString()}`,
-    `Message-ID: <${crypto.randomUUID()}@shirasaka.work>`,
-    "MIME-Version: 1.0",
-    'Content-Type: text/plain; charset="utf-8"',
-    "Content-Transfer-Encoding: base64",
-  ];
-  return `${headers.join("\r\n")}\r\n\r\n${wrap76(base64Utf8(opts.body))}\r\n`;
 }
 
 function formatBytes(n: number): string {
