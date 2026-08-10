@@ -37,7 +37,9 @@ export const onRequest = async (context: {
 }): Promise<Response> => {
   const { request, env } = context;
 
-  if (request.method === "OPTIONS") return cors();
+  const origin = request.headers.get("origin");
+
+  if (request.method === "OPTIONS") return cors(undefined, 200, origin);
 
   if (request.method !== "POST") {
     return new Response("Method Not Allowed", {
@@ -46,35 +48,49 @@ export const onRequest = async (context: {
     });
   }
 
-  return handleContact(request, env);
+  return handleContact(request, env, origin);
 };
 
 // ── CORS ────────────────────────────────────────────────────────────────
 
-function cors(body?: BodyInit | null, status = 200): Response {
+const ALLOWED_ORIGINS = [
+  "https://ren.shirasaka.work",
+  "https://ren-portfolio.pages.dev",
+];
+
+function cors(body?: BodyInit | null, status = 200, requestOrigin?: string | null): Response {
+  const origin =
+    requestOrigin && ALLOWED_ORIGINS.includes(requestOrigin)
+      ? requestOrigin
+      : ALLOWED_ORIGINS[0];
   const headers = new Headers({
-    "access-control-allow-origin": "https://ren.shirasaka.work",
+    "access-control-allow-origin": origin,
     "access-control-allow-methods": "POST, OPTIONS",
     "access-control-allow-headers": "content-type",
     "access-control-max-age": "86400",
   });
+  // When the origin is reflected dynamically, Vary tells caches not to serve
+  // the wrong CORS header to a different origin.
+  if (requestOrigin && ALLOWED_ORIGINS.includes(requestOrigin)) {
+    headers.set("vary", "Origin");
+  }
   if (body && typeof body === "object" && !(body instanceof ReadableStream)) {
     headers.set("content-type", "application/json; charset=utf-8");
   }
   return new Response(body, { status, headers });
 }
 
-function jsonE(data: unknown, status = 200): Response {
-  return cors(JSON.stringify(data), status);
+function jsonE(data: unknown, status = 200, origin?: string | null): Response {
+  return cors(JSON.stringify(data), status, origin);
 }
 
-function errResp(message: string, status = 400): Response {
-  return cors(JSON.stringify({ error: message }), status);
+function errResp(message: string, status = 400, origin?: string | null): Response {
+  return cors(JSON.stringify({ error: message }), status, origin);
 }
 
 // ── contact ─────────────────────────────────────────────────────────────
 
-async function handleContact(request: Request, env: Env): Promise<Response> {
+async function handleContact(request: Request, env: Env, origin: string | null): Promise<Response> {
   // The front end posts multipart/form-data so the browser can send a file
   // natively. `formData()` buffers the full request body in isolate memory;
   // the 25 MB cap on the client keeps this far from the 128 MB ceiling.
@@ -82,7 +98,7 @@ async function handleContact(request: Request, env: Env): Promise<Response> {
   try {
     fd = await request.formData();
   } catch {
-    return errResp("Expected form data.");
+    return errResp("Expected form data.", 400, origin);
   }
 
   const name = (fd.get("name") as string | null)?.trim() ?? "";
@@ -91,14 +107,14 @@ async function handleContact(request: Request, env: Env): Promise<Response> {
   const file = fd.get("attachment") as File | null;
 
   if (!name || name.length > MAX_NAME)
-    return errResp("Please include your name.");
+    return errResp("Please include your name.", 400, origin);
   if (!EMAIL_RE.test(email) || email.length > MAX_NAME)
-    return errResp("That email address doesn't look right.");
+    return errResp("That email address doesn't look right.", 400, origin);
   if (!message || message.length > MAX_MESSAGE)
-    return errResp(`Message must be 1–${MAX_MESSAGE} characters.`);
+    return errResp(`Message must be 1–${MAX_MESSAGE} characters.`, 400, origin);
 
   if (file && file.size > MAX_FILE)
-    return errResp(`File too large (${MAX_FILE / 1024 / 1024} MB max).`, 413);
+    return errResp(`File too large (${MAX_FILE / 1024 / 1024} MB max).`, 413, origin);
 
   // ── upload file to R2 ──
 
@@ -136,6 +152,7 @@ async function handleContact(request: Request, env: Env): Promise<Response> {
     return errResp(
       "Mail delivery isn't configured yet. Please email ren@shirasaka.work directly.",
       503,
+      origin,
     );
   }
 
@@ -171,14 +188,18 @@ async function handleContact(request: Request, env: Env): Promise<Response> {
       console.error("[contact] worker failed:", workerRes.status, workerText.slice(0, 300));
       return jsonE(
         { ok: true, note: "Email may be delayed — please email ren@shirasaka.work directly if you don't hear back." },
+        200,
+        origin,
       );
     }
 
-    return jsonE({ ok: true });
+    return jsonE({ ok: true }, 200, origin);
   } catch (e) {
     console.error("[contact] worker unreachable:", String(e?.message ?? e));
     return jsonE(
       { ok: true, note: "Email may be delayed — please email ren@shirasaka.work directly if you don't hear back." },
+      200,
+      origin,
     );
   }
 }
