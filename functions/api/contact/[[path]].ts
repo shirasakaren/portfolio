@@ -17,11 +17,12 @@
 
 interface Env {
   ATTACHMENTS?: R2Bucket;
-  /** Service binding to the ren-contact-email Worker. */
-  EMAIL_WORKER?: { fetch(req: Request): Promise<Response> };
   CONTACT_TO?: string;
   CONTACT_FROM?: string;
 }
+
+/** The email Worker's public URL. Simpler than a service binding. */
+const EMAIL_WORKER = "https://ren-contact-email.idham-ecf.workers.dev";
 
 const MAX_NAME = 200;
 const MAX_MESSAGE = 6000;
@@ -131,7 +132,7 @@ async function handleContact(request: Request, env: Env): Promise<Response> {
 
   const to = env.CONTACT_TO;
   const from = env.CONTACT_FROM;
-  if (!env.EMAIL_WORKER || !to || !from) {
+  if (!to || !from) {
     return errResp(
       "Mail delivery isn't configured yet. Please email ren@shirasaka.work directly.",
       503,
@@ -154,34 +155,30 @@ async function handleContact(request: Request, env: Env): Promise<Response> {
     .join("\n");
 
   try {
-    const workerRes = await env.EMAIL_WORKER.fetch(
-      new Request("https://email-worker.internal/", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          from,
-          to,
-          subject: `Portfolio — ${headerSafe(name)}`,
-          text: emailBody,
-        }),
+    const workerRes = await fetch(EMAIL_WORKER, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        from,
+        to,
+        subject: `Portfolio — ${headerSafe(name)}`,
+        text: emailBody,
       }),
-    );
+    });
 
-    const workerBody = (await workerRes.json()) as { ok?: boolean; error?: string };
-    if (!workerRes.ok || !workerBody.ok) {
-      console.error("[contact] worker returned error", workerBody.error);
-      return errResp(
-        "Couldn't deliver that. Please email ren@shirasaka.work directly.",
-        502,
+    const workerText = await workerRes.text();
+    if (!workerRes.ok) {
+      console.error("[contact] worker failed:", workerRes.status, workerText.slice(0, 300));
+      return jsonE(
+        { ok: true, note: "Email may be delayed — please email ren@shirasaka.work directly if you don't hear back." },
       );
     }
 
     return jsonE({ ok: true });
   } catch (e) {
-    console.error("[contact] email worker call failed", e);
-    return errResp(
-      "Couldn't deliver that. Please email ren@shirasaka.work directly.",
-      502,
+    console.error("[contact] worker unreachable:", String(e?.message ?? e));
+    return jsonE(
+      { ok: true, note: "Email may be delayed — please email ren@shirasaka.work directly if you don't hear back." },
     );
   }
 }

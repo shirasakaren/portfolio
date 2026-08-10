@@ -32,20 +32,13 @@ export default {
       return json({ error: "send_email binding not configured" }, 503);
     }
 
-    // Build a complete RFC 5322 message so it renders in any email client.
     const raw = [
-      `From: Ren's Portfolio <${from}>`,
-      `To: <${to}>`,
+      `From: ${from}`,
+      `To: ${to}`,
       `Subject: ${subject}`,
       `Date: ${new Date().toUTCString()}`,
-      `Message-ID: <${crypto.randomUUID()}@shirasaka.work>`,
-      "MIME-Version: 1.0",
-      'Content-Type: text/plain; charset="utf-8"',
-      "Content-Transfer-Encoding: base64",
       "",
-      btoa(text)
-        .match(/.{1,76}/g)
-        ?.join("\n"),
+      text,
     ].join("\r\n");
 
     try {
