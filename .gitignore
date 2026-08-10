@@ -42,3 +42,8 @@ next-env.d.ts
 
 # Diagrams that carry a not-for-public notice
 /private-assets
+
+# Large source media — kept locally for encoding, only the compressed
+# derivatives (*.mp4, *.jpg) are committed.
+public/*.mov
+public/*.gif

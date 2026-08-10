@@ -183,11 +183,7 @@ export default function Home() {
                   Got something that needs keeping alive?
                 </h2>
                 <p className="mx-auto mt-4 max-w-xl text-lg text-ink-500">
-                  Coffee, matcha, and a very tidy{" "}
-                  <code className="rounded-md bg-white/70 px-1.5 py-0.5 font-mono text-[0.9em] text-sakura-700">
-                    terraform plan
-                  </code>{" "}
-                  accepted as payment. 🍵
+                  Let's connect and grow together!
                 </p>
                 <Magnetic className="mt-9">
                   <Link

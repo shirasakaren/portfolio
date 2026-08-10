@@ -79,28 +79,28 @@ export const pillars = [
     emoji: "☁️",
     title: "Cloud foundations",
     short: "Six clouds, no snowflakes",
-    body: "Landing zones, identity, network topology and guardrails — expressed once in code, specialised per provider.",
+    body: "Landing zones, identity, network topology and guardrails.",
   },
   {
     id: "platform",
     emoji: "⎈",
     title: "Platform & delivery",
     short: "GitOps all the way down",
-    body: "Kubernetes people actually enjoy shipping to: progressive delivery, policy at admission, immutable nodes underneath.",
+    body: "Kubernetes people actually enjoy shipping to.",
   },
   {
     id: "security",
     emoji: "🛡️",
     title: "Security engineering",
     short: "I attack my own infra first",
-    body: "Signed supply chains, secrets that never touch a repo, runtime detection that pages a human and a playbook at once.",
+    body: "Signed supply chains, runtime detection that pages a human and a playbook at once.",
   },
   {
     id: "reliability",
     emoji: "📊",
     title: "Reliability & observability",
     short: "Alerts that arrive with the answer",
-    body: "Native histograms, honest load tests, correlated traces and logs. Every alert ships with its dashboard and runbook.",
+    body: "Native histograms, honest load tests, correlated traces and logs.",
   },
 ] as const;
 

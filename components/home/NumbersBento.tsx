@@ -42,7 +42,7 @@ export function NumbersBento() {
       suffix: "+",
       label: "Years on call",
       detail:
-        "Career started October 2022. Every year counted in production incidents, not calendar months.",
+        "Career started October 2022, and I haven't missed a single on-call rotation since.",
       span: "lg:col-span-2",
       large: true,
     },
@@ -50,7 +50,7 @@ export function NumbersBento() {
       value: companyCount,
       label: "Companies",
       detail:
-        "Startups, research labs, data centres — remote, on-site, hybrid. Availability does not care where the desk is.",
+        "Startups, research labs, data centres — remote, on-site, hybrid.",
       span: "lg:col-span-1",
     },
     {
@@ -64,14 +64,14 @@ export function NumbersBento() {
       value: cloudCount,
       label: "Cloud providers",
       detail:
-        "AWS, GCP, Azure, Cloudflare, Huawei, Alibaba, Oracle, IBM, DigitalOcean, OpenStack. One pattern, zero snowflakes.",
+        "AWS, GCP, Azure, Cloudflare, Huawei, Alibaba, Oracle, IBM, DigitalOcean, OpenStack.",
       span: "lg:col-span-1",
     },
     {
       value: skillCount,
       label: "Tools mastered",
       detail:
-        "From kernel to browser — everything on the /stack page has seen production. Nothing listed from a tutorial.",
+        "From kernel to browser — everything on the /stack page has seen production.",
       span: "lg:col-span-1",
     },
     {
