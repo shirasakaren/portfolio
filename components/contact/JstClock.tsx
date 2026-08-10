@@ -5,16 +5,16 @@ import { useSyncExternalStore } from "react";
 /**
  * Shows the current time in JST (UTC+9), updating on each minute boundary.
  *
- * Uses `useSyncExternalStore` so the subscription is side-effect free —
- * the lint rule that forbids `setState` inside an effect has no purchase here.
- * The store fires once per minute, aligned to the top of the minute so every
- * clock on the page ticks in unison.
+ * Uses `useSyncExternalStore` so the subscription is side-effect free.
+ * Returns a **string** from getSnapshot — never a fresh object — because
+ * React compares snapshots with Object.is and a new `Date` every call
+ * would trigger an infinite re-render loop.
  */
 
-function jstNow(): Date {
+function jstNowISO(): string {
   return new Date(
     new Date().toLocaleString("en-US", { timeZone: "Asia/Tokyo" }),
-  );
+  ).toISOString();
 }
 
 let _subs = 0;
@@ -43,8 +43,9 @@ function subscribe(onChange: () => void) {
   };
 }
 
+/** Returns an ISO string — a primitive, so Object.is works correctly. */
 function getSnapshot() {
-  return jstNow();
+  return jstNowISO();
 }
 
 function getServerSnapshot() {
@@ -52,11 +53,13 @@ function getServerSnapshot() {
 }
 
 export function JstClock({ className = "" }: { className?: string }) {
-  const time = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const iso = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
-  if (!time) {
+  if (!iso) {
     return <span className={className}>JST</span>;
   }
+
+  const time = new Date(iso);
 
   const day = time.toLocaleDateString("en-US", {
     timeZone: "Asia/Tokyo",
