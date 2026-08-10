@@ -13,17 +13,12 @@
  *   Email       `SEND_EMAIL`     → the Email Routing send_email binding
  */
 
-import { EmailMessage } from "cloudflare:email";
-
 // ── types ───────────────────────────────────────────────────────────────
-
-interface SendEmailBinding {
-  send(message: EmailMessage): Promise<void>;
-}
 
 interface Env {
   ATTACHMENTS?: R2Bucket;
-  SEND_EMAIL?: SendEmailBinding;
+  /** Service binding to the ren-contact-email Worker. */
+  EMAIL_WORKER?: { fetch(req: Request): Promise<Response> };
   CONTACT_TO?: string;
   CONTACT_FROM?: string;
 }
@@ -132,11 +127,11 @@ async function handleContact(request: Request, env: Env): Promise<Response> {
     }
   }
 
-  // ── send email ──
+  // ── send email via the Worker (which has the send_email binding) ──
 
   const to = env.CONTACT_TO;
   const from = env.CONTACT_FROM;
-  if (!env.SEND_EMAIL || !to || !from) {
+  if (!env.EMAIL_WORKER || !to || !from) {
     return errResp(
       "Mail delivery isn't configured yet. Please email ren@shirasaka.work directly.",
       503,
@@ -158,20 +153,36 @@ async function handleContact(request: Request, env: Env): Promise<Response> {
     .filter(Boolean)
     .join("\n");
 
-  try {
-    const raw = buildMime({
-      from,
-      to,
-      replyTo: headerSafe(email),
-      fromName: `${headerSafe(name)} (via shirasaka.work)`,
-      subject: `Portfolio — ${headerSafe(name)}`,
-      body: emailBody,
-    });
+  const raw = buildMime({
+    from,
+    to,
+    replyTo: headerSafe(email),
+    fromName: `${headerSafe(name)} (via shirasaka.work)`,
+    subject: `Portfolio — ${headerSafe(name)}`,
+    body: emailBody,
+  });
 
-    await env.SEND_EMAIL.send(new EmailMessage(from, to, raw));
+  try {
+    const workerRes = await env.EMAIL_WORKER.fetch(
+      new Request("https://email-worker.internal/", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ from, to, rawMime: raw }),
+      }),
+    );
+
+    const workerBody = (await workerRes.json()) as { ok?: boolean; error?: string };
+    if (!workerRes.ok || !workerBody.ok) {
+      console.error("[contact] worker returned error", workerBody.error);
+      return errResp(
+        workerBody.error ?? "Couldn't deliver that. Please email ren@shirasaka.work directly.",
+        502,
+      );
+    }
+
     return jsonE({ ok: true });
   } catch (e) {
-    console.error("[contact] send failed", e);
+    console.error("[contact] email worker call failed", e);
     return errResp(
       "Couldn't deliver that. Please email ren@shirasaka.work directly.",
       502,
