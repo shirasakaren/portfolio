@@ -3,6 +3,30 @@
 /_next/static/*
   Cache-Control: public, max-age=31536000, immutable
 
+/fight-720p.mp4
+  Cache-Control: public, max-age=31536000, immutable
+
+/fight-h264.mp4
+  Cache-Control: public, max-age=31536000, immutable
+
+/fight-poster.jpg
+  Cache-Control: public, max-age=31536000, immutable
+
+/walk-h264.mp4
+  Cache-Control: public, max-age=31536000, immutable
+
+/walk-720p.mp4
+  Cache-Control: public, max-age=31536000, immutable
+
+/walk-poster.jpg
+  Cache-Control: public, max-age=31536000, immutable
+
+/vibing.mp4
+  Cache-Control: public, max-age=31536000, immutable
+
+/vibing-poster.jpg
+  Cache-Control: public, max-age=31536000, immutable
+
 /hero-video/*
   Cache-Control: public, max-age=31536000, immutable
 

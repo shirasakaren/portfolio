@@ -428,63 +428,72 @@ export function useParallax(distance = 60) {
 export function SplitReveal({
   text,
   className = "",
-  wordClassName = "",
   delay = 0,
-  stagger = 0.045,
+  stagger = 0.018,
   lang,
 }: {
   text: string;
   className?: string;
-  wordClassName?: string;
   delay?: number;
   stagger?: number;
   lang?: string;
 }) {
   const reduced = usePrefersReducedMotion();
-  const words = text.split(" ");
+  const ref = useRef<HTMLSpanElement>(null);
+  const inView = useInView(ref, { once: true, amount: 0.4 });
 
   if (reduced) {
     return (
-      <span className={className} lang={lang}>
+      <span ref={ref} className={className} lang={lang}>
         {text}
       </span>
     );
   }
 
+  // Split by words so each word stays together across line breaks.
+  // Within each word every character animates independently, but the
+  // `whitespace-nowrap` wrapper keeps the word from splitting mid-air.
+  const words = text.split(" ");
+  let charIndex = 0;
+
   return (
-    <motion.span
-      className={className}
-      lang={lang}
-      initial="hidden"
-      whileInView="shown"
-      viewport={{ once: true, amount: 0.4 }}
-      variants={{ shown: { transition: { staggerChildren: stagger, delayChildren: delay } } }}
-      aria-label={text}
-    >
-      {words.map((word, i) => (
+    <span ref={ref} className={className} lang={lang} aria-label={text}>
+      {words.map((word, wi) => (
         <span
-          key={`${word}-${i}`}
-          aria-hidden
-          className="inline-block overflow-hidden align-bottom"
-          style={{ paddingBottom: "0.12em", marginBottom: "-0.12em" }}
+          key={wi}
+          className="inline-block whitespace-nowrap"
+          style={
+            wi < words.length - 1
+              ? { marginRight: "0.32em" }
+              : undefined
+          }
         >
-          <motion.span
-            className={`inline-block ${wordClassName}`}
-            variants={{
-              hidden: { y: "115%", opacity: 0 },
-              shown: {
-                y: "0%",
-                opacity: 1,
-                transition: { duration: 0.72, ease: EASE },
-              },
-            }}
-          >
-            {word}
-            {i < words.length - 1 ? " " : ""}
-          </motion.span>
+          {[...word].map((char) => {
+            const ci = charIndex++;
+            return (
+              <motion.span
+                key={`${wi}-${char}-${ci}`}
+                aria-hidden
+                className="inline-block"
+                initial={{ opacity: 0, y: 5 }}
+                animate={
+                  inView
+                    ? { opacity: 1, y: 0 }
+                    : { opacity: 0, y: 5 }
+                }
+                transition={{
+                  duration: 0.28,
+                  delay: delay + ci * stagger,
+                  ease: EASE,
+                }}
+              >
+                {char}
+              </motion.span>
+            );
+          })}
         </span>
       ))}
-    </motion.span>
+    </span>
   );
 }
 

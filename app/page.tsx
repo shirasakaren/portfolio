@@ -5,23 +5,15 @@ import {
   FeaturedWork,
   LogoWall,
   PersonalTeaser,
-  Pillars,
 } from "@/components/home/HomeSections";
-import { Counter, Magnetic, Reveal, SplitReveal, Stagger, StaggerItem } from "@/components/motion";
+import { WalkVideo } from "@/components/home/WalkVideo";
+import { Capabilities } from "@/components/home/Capabilities";
+import { Magnetic, Reveal, SplitReveal } from "@/components/motion";
 import { PageTransition } from "@/components/site/PageTransition";
-import { Kicker, PetalRule, Sparkles, StatTile } from "@/components/ui";
-import { ReactionClip } from "@/components/visual/ReactionClip";
-import {
-  experience,
-  profile,
-  projects,
-  skillCount,
-  stack,
-  yearsOfExperience,
-} from "@/lib/content";
-
-const cloudCount = stack.find((g) => g.id === "clouds")?.items.length ?? 0;
-const roleCount = experience.reduce((n, c) => n + c.roles.length, 0);
+import { Kicker, PetalRule, Sparkles } from "@/components/ui";
+import { FightVideo } from "@/components/home/FightVideo";
+import { NumbersBento } from "@/components/home/NumbersBento";
+import { profile, skillCount } from "@/lib/content";
 
 export default function Home() {
   return (
@@ -44,7 +36,7 @@ export default function Home() {
           aria-labelledby="intro"
           className="mx-auto w-full max-w-[1180px] px-6 pt-24 sm:px-10 sm:pt-32"
         >
-          <div className="grid items-center gap-10 lg:grid-cols-[1.15fr_0.85fr]">
+          <div className="grid items-center gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:items-stretch">
             <div>
               <Reveal y={14}>
                 <Kicker>so, who is keeping the lights on</Kicker>
@@ -53,7 +45,7 @@ export default function Home() {
                 id="intro"
                 className="text-gradient mt-4 font-display text-[clamp(2rem,5.2vw,3.5rem)] leading-[1.05] font-extrabold tracking-[-0.02em]"
               >
-                <SplitReveal text="Infrastructure that stays boring, on purpose.  >⩊<" />
+                <SplitReveal text="Infrastructure that stays boring, on purpose. >⩊<" />
               </h2>
               <Reveal delay={0.2}>
                 <p className="mt-6 max-w-xl text-lg leading-relaxed text-ink-500">
@@ -72,12 +64,8 @@ export default function Home() {
               </Reveal>
             </div>
 
-            <Reveal delay={0.15} className="justify-self-center lg:justify-self-end">
-              <ReactionClip
-                name="looking"
-                size="w-44 sm:w-56"
-                caption="I'm great at what I do"
-              />
+            <Reveal delay={0.15} className="justify-self-center lg:justify-self-end lg:self-stretch">
+              <FightVideo />
             </Reveal>
           </div>
         </section>
@@ -102,40 +90,42 @@ export default function Home() {
           aria-label="By the numbers"
           className="mx-auto mt-20 w-full max-w-[1180px] px-6 sm:px-10"
         >
-          <Stagger className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-            {[
-              { value: yearsOfExperience(), suffix: "+", label: "years on call" },
-              { value: roleCount, label: "roles, 7 companies" },
-              { value: cloudCount, label: "clouds, one pattern" },
-              { value: projects.length, label: "builds you can read about" },
-            ].map((s) => (
-              <StaggerItem key={s.label}>
-                <StatTile
-                  value={<Counter to={s.value} suffix={s.suffix ?? ""} />}
-                  label={s.label}
-                />
-              </StaggerItem>
-            ))}
-          </Stagger>
+          <Reveal>
+            <Kicker>by the numbers</Kicker>
+            <h2 className="mt-3 max-w-2xl font-display text-[clamp(1.7rem,4vw,2.6rem)] leading-tight font-extrabold text-sakura-800">
+              The CV, compressed into six stats.
+            </h2>
+          </Reveal>
+          <div className="mt-10">
+            <NumbersBento />
+          </div>
         </section>
 
-        {/* ── pillars ──────────────────────────────────────────────── */}
+        {/* ── what I do ────────────────────────────────────────────── */}
 
         <section
           aria-labelledby="what-i-do"
           className="mx-auto mt-24 w-full max-w-[1180px] px-6 sm:px-10"
         >
           <Reveal>
-            <Kicker>what I actually do all day</Kicker>
-            <h2
-              id="what-i-do"
-              className="mt-3 max-w-2xl font-display text-[clamp(1.7rem,4vw,2.6rem)] leading-tight font-extrabold text-sakura-800"
-            >
-              Four things, and they all feed each other.
-            </h2>
+            <div className="relative">
+              <WalkVideo />
+              {/* Title bridging the video and the content below — half on
+                  the video, half on the page, like a connector. */}
+              <div className="pointer-events-none absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2">
+                <h2
+                  id="what-i-do"
+                  className="whitespace-nowrap rounded-full border border-white/60 bg-white/85 px-6 py-3 font-display text-lg font-extrabold text-sakura-800 shadow-[0_4px_28px_rgba(0,0,0,0.07)] backdrop-blur-sm sm:px-8 sm:py-3.5 sm:text-2xl"
+                >
+                  Things I can help
+                </h2>
+              </div>
+            </div>
           </Reveal>
-          <div className="mt-10">
-            <Pillars />
+
+          {/* Extra top padding to clear the overlaid title badge */}
+          <div className="mt-14 sm:mt-16">
+            <Capabilities />
           </div>
         </section>
 

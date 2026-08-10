@@ -11,7 +11,6 @@ import {
   TiltCard,
   useParallax,
 } from "@/components/motion";
-import { ReactionClip } from "@/components/visual/ReactionClip";
 import { brandIcon } from "@/lib/stack-icons";
 import { favourites, pillars, projects, stack } from "@/lib/content";
 
@@ -192,28 +191,42 @@ export function PersonalTeaser() {
   );
 
   return (
-    <div ref={ref} className="grid items-center gap-10 lg:grid-cols-[0.85fr_1.15fr]">
-      <motion.div style={{ y }} className="flex justify-center gap-3">
-        <ReactionClip
-          name="hehe"
-          size="w-32 sm:w-40"
-          rounded="rounded-[1.5rem]"
-          className="mt-8"
-        />
-        <ReactionClip
-          name="cheekPuff"
-          size="w-32 sm:w-40"
-          rounded="rounded-[1.5rem]"
+    <div ref={ref} className="grid items-center gap-10 lg:grid-cols-[1fr_1fr]">
+      {/* Left: vibing video — as tall as the content beside it */}
+      <motion.div
+        style={{ y }}
+        className="relative self-stretch overflow-hidden rounded-[2rem] border border-sakura-200/60 shadow-[0_18px_50px_-24px_rgba(214,51,108,0.4)]"
+      >
+        <video
+          muted
+          loop
+          playsInline
+          autoPlay
+          preload="auto"
+          disablePictureInPicture
+          poster="/vibing-poster.jpg"
+          className="h-full w-full object-cover"
+          onCanPlay={(e) => {
+            void (e.target as HTMLVideoElement).play().catch(() => {});
+          }}
+        >
+          <source src="/vibing.mp4" type="video/mp4" />
+        </video>
+        {/* Inner glow ring */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-0 rounded-[inherit] ring-1 ring-inset ring-white/40"
         />
       </motion.div>
 
+      {/* Right: content */}
       <div>
         <Reveal>
           <p className="font-display text-xs font-bold tracking-[0.34em] text-sakura-500 uppercase">
             ✿ and off the clock
           </p>
           <h2 className="text-gradient mt-3 font-display text-[clamp(1.8rem,4.4vw,2.9rem)] leading-tight font-extrabold">
-            There is a person under all this YAML.
+            Someone is behind this.
           </h2>
           <p className="mt-4 max-w-xl text-lg leading-relaxed text-ink-500">
             She is a picky eater with a cat, an archery habit and extremely
