@@ -48,12 +48,12 @@ export default function Home() {
                 <SplitReveal text="Infrastructure that stays boring, on purpose. >⩊<" />
               </h2>
               <Reveal delay={0.2}>
-                <p className="mt-6 max-w-xl text-lg leading-relaxed text-ink-500">
+                <p className="hero-halo-sm mt-6 max-w-xl text-lg leading-relaxed text-ink-500">
                   The best compliment my work ever gets is silence — no
-                  incidents, no surprises, no 3AM pages. HR will always 
+                  incidents, no surprises, no 3AM pages. HR will always
                   complain when I do nothing cus no accident, and will
                   also complain when there&rsquo;s an accident.
-                </p>            
+                </p>
               </Reveal>
               <Reveal delay={0.28}>
                 <p className="mt-4 max-w-xl text-ink-500">
@@ -183,7 +183,7 @@ export default function Home() {
                   Got something that needs keeping alive?
                 </h2>
                 <p className="mx-auto mt-4 max-w-xl text-lg text-ink-500">
-                  Let's connect and grow together!
+                  Let&rsquo;s connect and grow together!
                 </p>
                 <Magnetic className="mt-9">
                   <Link

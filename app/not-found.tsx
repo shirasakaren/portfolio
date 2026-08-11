@@ -27,7 +27,7 @@ export default function NotFound() {
           <h1 className="text-gradient mt-4 font-display text-[clamp(2rem,5.4vw,3.4rem)] leading-tight font-extrabold">
             This route doesn&rsquo;t resolve
           </h1>
-          <p className="mx-auto mt-4 max-w-md text-lg text-ink-500">
+          <p className="hero-halo-sm mx-auto mt-4 max-w-md text-lg text-ink-500">
             It&rsquo;s not DNS · there&rsquo;s no way it&rsquo;s DNS · it was
             DNS. 🙃
           </p>
