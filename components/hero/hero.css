@@ -1,0 +1,58 @@
+/* ───────────────────────────────────────────────────────────────────
+   Hero video — subject-aware crop
+   Lives in CSS rather than an inline style because it has to gate on a
+   breakpoint, which an inline style can't do.
+   ─────────────────────────────────────────────────────────────────── */
+
+/**
+ * Keeps her — she sits about 30% of the way across the 1920×1080 frame — in
+ * frame as the box gets taller and narrower than the video, instead of a flat
+ * crop that either shows her every time or drifts toward the desk on anything
+ * phone-shaped. Applied to both the `<video>` and the poster it sits on top
+ * of while loading, so there's no jump in framing once the video takes over.
+ *
+ * On a viewport-filling box, `object-fit`/`background-size: cover` scales the
+ * image by `100svh × (1920/1080)` whenever the box is taller/narrower than
+ * its own ratio — true of every real device except an ultra-wide monitor.
+ * Solving "keep the visible slice centred on 30% of the source" for the
+ * resulting left-edge offset gives a closed form in plain `vw`/`svh`, no JS
+ * involved:
+ *
+ *   offset = 50vw − 53.3333svh     (53.3333 = 30% × 1920/1080 × 100)
+ *
+ * `clamp()` then keeps that offset inside the range `cover` can paint without
+ * opening a gap at either edge. Once the box is wide enough that the crop
+ * barely bites — a laptop, a desktop monitor, the exact 16:9 case — the clamp
+ * pins the offset at 0, which is a plain centred crop: nothing changes for
+ * anyone not looking at this on something phone-shaped.
+ */
+.hero-video,
+.hero-poster {
+  --hero-crop: clamp(
+    min(0px, calc(100vw - 177.7778svh)),
+    calc(50vw - 53.3333svh),
+    0px
+  );
+}
+
+.hero-video {
+  object-position: var(--hero-crop) center;
+}
+
+.hero-poster {
+  background-position: var(--hero-crop) center;
+}
+
+/* From here up, the text column sits beside the art instead of centred on top
+   of it (see Hero.tsx's own `md:` prefixes) — which assumes a wide,
+   barely-cropped frame with empty desk to its right. A tablet held in
+   portrait is `md` or wider but still tall enough to trigger a real crop, and
+   the formula above would pull enough of her into frame to run into that
+   text. Past this point the crop is mild enough that a plain centre is both
+   accurate and safe — this is the same guard the layout itself relies on. */
+@media (min-width: 768px) {
+  .hero-video,
+  .hero-poster {
+    --hero-crop: center;
+  }
+}

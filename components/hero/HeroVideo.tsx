@@ -4,6 +4,8 @@ import { useEffect, useRef } from "react";
 
 import { MEDIA_KEYS, provideMedia } from "@/lib/mediaRegistry";
 
+import "./hero.css";
+
 /**
  * The hero background, straight off the encode ladder in
  * public/hero-video/README.md.
@@ -34,6 +36,16 @@ const RIGHT_WASH =
   " rgba(255,250,252,0.17) 38%," +
   " rgba(255,250,252,0.05) 55%," +
   " rgba(255,250,252,0) 68%)";
+
+/**
+ * A soft, width-driven veil — not a scrim over the artwork (see the note on
+ * `RIGHT_WASH`), just a little extra lift for the text as the crop tightens
+ * and she fills more of the frame on a phone. Gone by ~860px, where the text
+ * sits beside the illustration rather than on top of it; at the narrowest
+ * phones it tops out at 30% alpha of the site's own cream — present, never a
+ * haze over the artwork.
+ */
+const NARROW_VEIL_OPACITY = "clamp(0, calc((860px - 100vw) / 1600px), 0.3)";
 
 /**
  * Tier breakpoints are deliberately higher than the encode ladder's defaults.
@@ -124,7 +136,7 @@ export function HeroVideo({ play }: { play: boolean }) {
 
   return (
     <div
-      className="absolute inset-0 -z-10 bg-sakura-100 bg-cover bg-center"
+      className="hero-poster absolute inset-0 -z-10 bg-sakura-100 bg-cover"
       style={{
         backgroundImage:
           'image-set(url("/hero-video/hero-poster.avif") type("image/avif"), url("/hero-video/hero-poster.webp") type("image/webp"), url("/hero-video/hero-poster.jpg") type("image/jpeg"))',
@@ -139,7 +151,7 @@ export function HeroVideo({ play }: { play: boolean }) {
         disablePictureInPicture
         aria-hidden="true"
         tabIndex={-1}
-        className="h-full w-full object-cover object-[62%_center] md:object-center"
+        className="hero-video h-full w-full object-cover"
       >
         <source
           src="/hero-video/hero-2160p.av1.mp4"
@@ -171,6 +183,16 @@ export function HeroVideo({ play }: { play: boolean }) {
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 opacity-60 md:opacity-100"
         style={{ backgroundImage: RIGHT_WASH }}
+      />
+
+      {/* The width-driven veil described above `NARROW_VEIL_OPACITY`. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0"
+        style={{
+          backgroundColor: "var(--color-cream)",
+          opacity: NARROW_VEIL_OPACITY,
+        }}
       />
     </div>
   );
