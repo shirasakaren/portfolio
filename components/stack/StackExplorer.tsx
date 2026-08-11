@@ -24,10 +24,13 @@ import "./stack.css";
  * 219 skills, matching the tool's own name *and* the words a job ad would use
  * for it — type "EKS" and AWS lights up, with a chip explaining why.
  *
- * Filtering dims rather than removes. Collapsing the page to matches would
- * throw away the thing that makes a stack page useful: seeing that the one
- * skill you searched for sits in a category full of neighbours she also knows.
- * Nothing reflows, so the scroll position never jumps under the reader.
+ * Filtering dims rather than removes — a match's neighbours stay visible for
+ * context, they just stop being the thing the reader has to scroll past. A
+ * match itself moves to the front of its category, and any category holding a
+ * match moves ahead of the ones that don't, so the answer to "does she know X?"
+ * is always waiting at the top of the page instead of buried wherever that
+ * skill happens to live in the curated order. Nothing reorders while the query
+ * is empty — the default browsing order is untouched.
  */
 
 type Match = { hit: boolean; alias?: string };
@@ -122,18 +125,39 @@ export function StackExplorer() {
    */
   const results = useMemo(() => {
     const byGroup = new Map<string, Map<string, Match>>();
+    const hitsByGroup = new Map<string, number>();
     let total = 0;
     for (const group of stack) {
       const inner = new Map<string, Match>();
+      let hits = 0;
       for (const skill of group.items) {
         const m = matchSkill(skill, group, patterns);
         inner.set(skill.name, m);
-        if (m.hit) total++;
+        if (m.hit) {
+          hits++;
+          total++;
+        }
       }
       byGroup.set(group.id, inner);
+      hitsByGroup.set(group.id, hits);
     }
-    return { byGroup, total };
+    return { byGroup, hitsByGroup, total };
   }, [patterns]);
+
+  /**
+   * Categories holding a match float to the top, ranked by how many matches
+   * they hold; categories with none sink to the bottom in their original
+   * order. Stable sort keeps that bottom group untouched relative to itself,
+   * so browsing after clearing the search snaps straight back to normal.
+   */
+  const orderedGroups = useMemo(() => {
+    if (!filtering) return stack;
+    return [...stack].sort(
+      (a, b) =>
+        (results.hitsByGroup.get(b.id) ?? 0) -
+        (results.hitsByGroup.get(a.id) ?? 0),
+    );
+  }, [filtering, results]);
 
   const applyPreset = useCallback(
     (id: string) => {
@@ -244,7 +268,7 @@ export function StackExplorer() {
       {/* ── category nav ──────────────────────────────────────────── */}
       <nav aria-label="Categories" className="mt-8">
         <ul className="flex flex-wrap gap-1.5">
-          {stack.map((group) => {
+          {orderedGroups.map((group) => {
             const hits = filtering
               ? group.items.filter(
                   (s) => results.byGroup.get(group.id)?.get(s.name)?.hit,
@@ -299,7 +323,7 @@ export function StackExplorer() {
 
       {/* ── the matrix ────────────────────────────────────────────── */}
       <div className="mt-10 space-y-14">
-        {stack.map((group) => (
+        {orderedGroups.map((group) => (
           <StackSection
             key={group.id}
             group={group}
@@ -385,6 +409,20 @@ function StackSection({
     ? group.items.filter((s) => matches?.get(s.name)?.hit).length
     : group.items.length;
 
+  /**
+   * A match leads its category instead of waiting in place for the reader to
+   * scroll to it. `sort` is stable, so within "matched" and "unmatched" each
+   * keeps the curated order — only the matched/unmatched boundary moves.
+   */
+  const orderedItems = useMemo(() => {
+    if (!filtering) return group.items;
+    return [...group.items].sort((a, b) => {
+      const ah = matches?.get(a.name)?.hit ? 0 : 1;
+      const bh = matches?.get(b.name)?.hit ? 0 : 1;
+      return ah - bh;
+    });
+  }, [group.items, matches, filtering]);
+
   return (
     <section
       ref={ref}
@@ -410,7 +448,7 @@ function StackSection({
       </p>
 
       <ul className="stack-grid mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-        {group.items.map((skill, i) => {
+        {orderedItems.map((skill, i) => {
           const m = matches?.get(skill.name);
           return (
             <SkillTile
