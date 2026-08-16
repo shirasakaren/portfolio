@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import type { AnimationItem } from "lottie-web";
 
 import { Lottie } from "@/components/lottie/Lottie";
@@ -61,26 +61,26 @@ export function HelloLottie({ play, onWipeStart, onDone, className }: Props) {
   const writeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const eraseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const release = () => {
+  const release = useCallback(() => {
     if (releasedRef.current) return;
     releasedRef.current = true;
     phaseRef.current = "done";
     cb.current.onWipeStart?.();
     cb.current.onDone?.();
-  };
+  }, []);
 
-  const armWrite = () => {
+  const armWrite = useCallback(() => {
     if (writeTimer.current) clearTimeout(writeTimer.current);
     writeTimer.current = setTimeout(release, 7000);
-  };
+  }, [release]);
 
-  const startWrite = () => {
+  const startWrite = useCallback(() => {
     phaseRef.current = "writing";
     startedRef.current = true;
     const anim = animRef.current;
     if (anim) beginWrite(anim);
     armWrite();
-  };
+  }, [armWrite]);
 
   useEffect(
     () => () => {
@@ -103,7 +103,7 @@ export function HelloLottie({ play, onWipeStart, onDone, className }: Props) {
       // proceeds without the write-on.
       readyTimer.current = setTimeout(release, 4500);
     }
-  }, [play]);
+  }, [play, startWrite, release]);
 
   function handleComplete() {
     const anim = animRef.current;
