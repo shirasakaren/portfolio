@@ -26,6 +26,15 @@
  * pins the offset at 0, which is a plain centred crop: nothing changes for
  * anyone not looking at this on something phone-shaped.
  */
+/* `svh` keeps the hero at the true visible height when a mobile URL bar
+   collapses; browsers that predate svh drop the second declaration and keep
+   the plain vh one. The Tailwind `h-svh` utility is deliberately not used so
+   this fallback can live beside it. */
+#hero {
+  height: 100vh;
+  height: 100svh;
+}
+
 .hero-video,
 .hero-poster {
   --hero-crop: clamp(
@@ -33,6 +42,13 @@
     calc(50vw - 53.3333svh),
     0px
   );
+}
+
+/* The inline `image-set()` negotiates AVIF/WebP/JPEG, but browsers without
+   image-set-with-type() drop the whole declaration — this class-level JPEG is
+   what they see instead of a bare pink block. */
+.hero-poster {
+  background-image: url("/hero-video/hero-poster.jpg");
 }
 
 .hero-video {

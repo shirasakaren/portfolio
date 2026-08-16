@@ -145,7 +145,15 @@ export function ShaderText({
       }
       void (async () => {
         try {
-          if (document.fonts?.ready) await document.fonts.ready;
+          // `fonts.ready` resolving is nice-to-have; a browser that never
+          // settles it must not hold the name invisible, so the rasterisation
+          // runs with whatever glyphs are available after the grace period.
+          if (document.fonts?.ready) {
+            await Promise.race([
+              document.fonts.ready,
+              new Promise((r) => setTimeout(r, 1500)),
+            ]);
+          }
           if (!alive) return;
           cleanupGl = runShader();
         } catch (err) {

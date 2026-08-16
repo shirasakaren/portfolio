@@ -179,6 +179,14 @@ export function DandelionTransition({
     let revealAnnounced = false;
     let finished = false;
 
+    // The veil must announce itself on its first frame; if the GPU stalls
+    // before that, the boot shield below it stays up until its 18s dead-man's
+    // switch. Bail to the crossfade instead — a plain white fade beats a
+    // hostage white screen.
+    const firstFrameBail = setTimeout(() => {
+      if (!curtainAnnounced) bailToFallback();
+    }, 2000);
+
     const onContextLost = (e: Event) => {
       e.preventDefault();
       cancelAnimationFrame(raf);
@@ -234,6 +242,7 @@ export function DandelionTransition({
 
       if (!curtainAnnounced) {
         curtainAnnounced = true;
+        clearTimeout(firstFrameBail);
         cb.current.onCurtainReady();
       }
       if (!revealAnnounced && progress >= REVEAL_AT) {
@@ -256,6 +265,7 @@ export function DandelionTransition({
 
     return () => {
       finished = true;
+      clearTimeout(firstFrameBail);
       cancelAnimationFrame(raf);
       window.removeEventListener("resize", onResize);
       canvas.removeEventListener("webglcontextlost", onContextLost);
