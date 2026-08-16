@@ -91,7 +91,12 @@ export function preloadMedia(
     el.addEventListener("stalled", done);
 
     if (el.readyState >= 3) onCanPlay();
-    el.load();
+    // Kick browsers that never began on their own — but never restart one
+    // that is already loading, which would abort the in-flight download and
+    // start it over on exactly the slow connections that need it not to.
+    if (el.readyState < 2 && el.networkState !== HTMLMediaElement.NETWORK_LOADING) {
+      el.load();
+    }
   });
 }
 

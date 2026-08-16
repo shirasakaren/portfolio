@@ -276,7 +276,15 @@ export function ScrollController() {
         if (SCROLL_KEYS.has(e.key)) e.preventDefault();
         return;
       }
-      if (!hero || snapping) return;
+      if (snapping) {
+        // A snap is a JS animation with a fixed destination. Letting the
+        // browser's own PageDown/End/Home scroll run underneath it makes the
+        // two fight — and in Firefox the native one wins often enough to dump
+        // the page at the bottom. Swallow scroll keys until the snap lands.
+        if (SCROLL_KEYS.has(e.key)) e.preventDefault();
+        return;
+      }
+      if (!hero) return;
 
       const down =
         e.key === "ArrowDown" ||

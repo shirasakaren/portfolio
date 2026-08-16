@@ -69,6 +69,58 @@ export function HeroVideo({ play }: { play: boolean }) {
   }, []);
 
   /**
+   * The ladder is the fast path; this is the guarantee underneath it. If every
+   * source is rejected — a browser that claims AV1 support but cannot decode
+   * these streams, or one that trips on the ladder itself — force the plain
+   * H.264 tier onto the element directly and let it play. `src` set directly
+   * skips source negotiation entirely, so there is nothing left to go wrong.
+   */
+  useEffect(() => {
+    const v = ref.current;
+    if (!v) return;
+    let fallbackTried = false;
+
+    const tryH264 = () => {
+      if (fallbackTried) return;
+      fallbackTried = true;
+      v.src =
+        window.innerWidth >= 900
+          ? "/hero-video/hero-1080p.h264.mp4"
+          : "/hero-video/hero-720p.h264.mp4";
+      v.load();
+      if (play) void v.play().catch(() => {});
+    };
+
+    // Source-level failures fire `error` on the <source> children; the capture
+    // listener sees them on the way up. Only the terminal state acts: while the
+    // browser is still working down the ladder, networkState is LOADING and the
+    // error is not on the element yet.
+    const onError = () => {
+      if (v.networkState === HTMLMediaElement.NETWORK_NO_SOURCE || v.error) {
+        tryH264();
+      }
+    };
+    v.addEventListener("error", onError, true);
+
+    // Some browsers sit silent instead of erroring. A stall with nothing
+    // decoded is treated the same — but never while a download is in flight,
+    // where interrupting would trade the lighter AV1 for a heavier H.264.
+    const stall = setTimeout(() => {
+      if (v.readyState < 2 && v.networkState !== HTMLMediaElement.NETWORK_LOADING) {
+        tryH264();
+      }
+    }, 8000);
+    const clearStall = () => clearTimeout(stall);
+    v.addEventListener("canplay", clearStall);
+
+    return () => {
+      clearTimeout(stall);
+      v.removeEventListener("canplay", clearStall);
+      v.removeEventListener("error", onError, true);
+    };
+  }, [play]);
+
+  /**
    * Keep it rolling whenever the hero is on screen.
    *
    * A single play() on mount is not enough: browsers pause off-screen video to

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useBoot } from "@/components/boot/BootProvider";
 import { HelloLottie } from "@/components/hero/HelloLottie";
@@ -29,18 +29,47 @@ export function Hero() {
   const [nameActive, setNameActive] = useState(!heroIntroPending);
   const [tailActive, setTailActive] = useState(!heroIntroPending);
 
-  // The last thing to animate is the tail block fading up; once that is under
-  // way the intro is effectively over and scrolling can be handed back.
+  const nameActiveRef = useRef(nameActive);
+  const tailActiveRef = useRef(tailActive);
   useEffect(() => {
-    if (tailActive) markIntroDone();
-  }, [tailActive, markIntroDone]);
+    nameActiveRef.current = nameActive;
+    tailActiveRef.current = tailActive;
+  }, [nameActive, tailActive]);
+
+  /**
+   * Backstop for the whole intro chain. The lottie has its own watchdogs, but
+   * this is the guarantee that sits above them all: if the name has not begun
+   * its reveal shortly after the page is live, it starts anyway — and the tail
+   * follows. The timers sit beyond the natural deadlines, so an on-time chain
+   * never feels them.
+   */
+  useEffect(() => {
+    if (!isLive) return;
+    const timers = [
+      setTimeout(() => {
+        if (!nameActiveRef.current) setNameActive(true);
+      }, 5200),
+      setTimeout(() => {
+        if (!tailActiveRef.current) setTailActive(true);
+      }, 6800),
+    ];
+    return () => timers.forEach(clearTimeout);
+  }, [isLive]);
+
+  // The last thing to animate is the tail block fading up; once that is under
+  // way the intro is effectively over and scrolling can be handed back. The
+  // `isLive` guard keeps a lottie that failed during the boot from unlocking
+  // scroll while the page is still behind the loading screen.
+  useEffect(() => {
+    if (isLive && tailActive) markIntroDone();
+  }, [isLive, tailActive, markIntroDone]);
 
   const videoPlaying = stage !== "loading";
 
   return (
     <section
       id="hero"
-      className="relative flex h-svh w-full items-center overflow-hidden"
+      className="relative flex w-full items-center overflow-hidden"
     >
       <HeroVideo play={videoPlaying} />
 

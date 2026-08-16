@@ -50,9 +50,44 @@ export function HelloLottie({ play, onWipeStart, onDone, className }: Props) {
     cb.current = { onWipeStart, onDone };
   });
 
+  /**
+   * Every link in this chain — archive fetch, player import, the write-on, the
+   * wipe — releases the hero text that sits beneath it. One stalled link must
+   * never leave the name invisible, so each phase arms a watchdog and any
+   * watchdog that fires skips straight to the released state.
+   */
+  const releasedRef = useRef(false);
+  const readyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const writeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const eraseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const release = () => {
+    if (releasedRef.current) return;
+    releasedRef.current = true;
+    phaseRef.current = "done";
+    cb.current.onWipeStart?.();
+    cb.current.onDone?.();
+  };
+
+  const armWrite = () => {
+    if (writeTimer.current) clearTimeout(writeTimer.current);
+    writeTimer.current = setTimeout(release, 7000);
+  };
+
+  const startWrite = () => {
+    phaseRef.current = "writing";
+    startedRef.current = true;
+    const anim = animRef.current;
+    if (anim) beginWrite(anim);
+    armWrite();
+  };
+
   useEffect(
     () => () => {
       timers.current.forEach(clearTimeout);
+      if (readyTimer.current) clearTimeout(readyTimer.current);
+      if (writeTimer.current) clearTimeout(writeTimer.current);
+      if (eraseTimer.current) clearTimeout(eraseTimer.current);
     },
     [],
   );
@@ -60,11 +95,14 @@ export function HelloLottie({ play, onWipeStart, onDone, className }: Props) {
   // Covers "animation was ready before `play` flipped". The other order is
   // handled in onReady.
   useEffect(() => {
-    const anim = animRef.current;
-    if (!play || !anim || startedRef.current) return;
-    startedRef.current = true;
-    phaseRef.current = "writing";
-    beginWrite(anim);
+    if (!play || startedRef.current) return;
+    if (animRef.current) {
+      startWrite();
+    } else {
+      // The loader has this long to produce a player; otherwise the hero
+      // proceeds without the write-on.
+      readyTimer.current = setTimeout(release, 4500);
+    }
   }, [play]);
 
   function handleComplete() {
@@ -73,6 +111,7 @@ export function HelloLottie({ play, onWipeStart, onDone, className }: Props) {
 
     if (phaseRef.current === "writing") {
       phaseRef.current = "erasing";
+      if (writeTimer.current) clearTimeout(writeTimer.current);
       timers.current.push(
         setTimeout(() => {
           anim.setSpeed(ERASE_SPEED);
@@ -80,6 +119,9 @@ export function HelloLottie({ play, onWipeStart, onDone, className }: Props) {
           timers.current.push(
             setTimeout(() => cb.current.onWipeStart?.(), ERASE_MS * 0.5),
           );
+          // The erase must complete too, or the tail below the name never
+          // fades in.
+          eraseTimer.current = setTimeout(release, ERASE_MS + 1500);
         }, BEAT_MS),
       );
       return;
@@ -87,6 +129,7 @@ export function HelloLottie({ play, onWipeStart, onDone, className }: Props) {
 
     if (phaseRef.current === "erasing") {
       phaseRef.current = "done";
+      if (eraseTimer.current) clearTimeout(eraseTimer.current);
       cb.current.onDone?.();
     }
   }
@@ -99,13 +142,13 @@ export function HelloLottie({ play, onWipeStart, onDone, className }: Props) {
       viewBox={HELLO_VIEWBOX}
       className={className}
       label="Hello"
+      onError={release}
       onReady={(anim) => {
         animRef.current = anim;
         anim.addEventListener("complete", handleComplete);
+        if (readyTimer.current) clearTimeout(readyTimer.current);
         if (play && !startedRef.current) {
-          startedRef.current = true;
-          phaseRef.current = "writing";
-          beginWrite(anim);
+          startWrite();
         }
       }}
     />

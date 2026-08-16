@@ -163,6 +163,14 @@ html[data-booting="true"] #boot-shield {
   display: block;
 }
 
+/* Scroll locking on touch: iOS ignores preventDefault on touchmove, but it
+   does honour `touch-action`, so "locked" also means locked for a finger. The
+   JS pin in ScrollController remains the second line of defence. */
+html[data-locked] body {
+  touch-action: none;
+  overscroll-behavior: none;
+}
+
 /* Applied to live text while its shader stand-in is drawing: the glyph fill
    disappears so only the halo layer beneath shows through, and the handoff at
    the end is a single-frame swap rather than a crossfade. */
